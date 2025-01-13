@@ -1,9 +1,27 @@
 import javax.swing.*;
 import javax.swing.border.Border;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+
+class Methods {
+	
+	public static String[] readFile(String fileName) {
+        List<String> List = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                List.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return List.toArray(new String[0]);
+    }
+}
 
 class user {
     private static final String FILE_PATH = "user.txt";
@@ -29,7 +47,20 @@ class user {
     }
 }
 
+class Students {
 
+    private static final String FILE_NAME = "Students.txt";
+
+    public static void saveStudent(String id, String password, String studentName, String fathersName, String mothersName, String nationality, String dob, String level, String department) 
+	throws IOException {	
+        String studentData = String.join(id, password, studentName, fathersName, mothersName, nationality, dob, level, department );
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
+            writer.write(studentData);
+            writer.newLine();
+        }
+    }
+}
 
 class MyFrame extends JFrame implements ActionListener {
     private JButton button1, button2;
@@ -106,6 +137,7 @@ class MyFrame extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == button1) {
             new Login();
+			this.dispose();
         }
     }
 }
@@ -115,8 +147,7 @@ class Login extends JFrame {
     JComboBox<String> userRoleComboBox;
     JTextField idField;
     JPasswordField passwordField;
-    JButton submitButton;
-    JButton showButton;
+    JButton submitButton, showButton, backButton;
     boolean isPasswordVisible = false;
 
     Login() {
@@ -186,6 +217,17 @@ class Login extends JFrame {
         submitButton.setFocusPainted(false);
         submitButton.addActionListener(e -> idAndPassCheck());
 
+        backButton = new JButton("Back");
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.setBounds(200, 250, 200, 30);
+        backButton.addActionListener(e -> {
+            new MyFrame();
+            this.dispose();
+        });
+
         this.add(label1);
         this.add(userRoleComboBox);
         this.add(label2);
@@ -194,8 +236,19 @@ class Login extends JFrame {
         this.add(passwordField);
         this.add(showButton);
         this.add(submitButton);
-
+        this.add(backButton);
         this.setVisible(true);
+    }
+
+    public void userclass() {
+        String userRole = (String) userRoleComboBox.getSelectedItem();
+        if (userRole.matches("Admin")) {
+            new Admin();
+        } else if (userRole.matches("Faculty")) {
+            new Faculty();
+        } else if (userRole.matches("Student")) {
+            new Student();
+        }
     }
 
     private void idAndPassCheck() {
@@ -203,30 +256,48 @@ class Login extends JFrame {
         String userRole = (String) userRoleComboBox.getSelectedItem();
         String password = new String(passwordField.getPassword());
 
-        if (id.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill all fields.");
-        } else if (id.length() != 5 || !id.matches("\\d+")) {
-            JOptionPane.showMessageDialog(this, "Invalid ID. Please enter a 5-digit number.");
-        } else if (password.length() < 6 || password.length() > 10 || !password.matches("[a-zA-Z0-9]+")) {
-            JOptionPane.showMessageDialog(this, "Password must be 6 to 10 characters long and contain only a-z, A-Z, and 0-9.");
-        } else {
-            try {
-                if (user.verifyUser(userRole, id, password)) {
-                    JOptionPane.showMessageDialog(this, "Login successful as " + userRole);
-					new Admin();
-                } else {
-                    JOptionPane.showMessageDialog(this, "Invalid credentials.");
+        if (userRole.equals("Admin")) {
+            if (id.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill all fields.");
+            } else {
+                try {
+                    if (user.verifyUser(userRole, "", password)) {
+                        JOptionPane.showMessageDialog(this, "Login successful as " + userRole);
+                        userclass();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Invalid credentials.");
+                    }
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(this, "Error accessing the database.");
                 }
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Error accessing the database.");
+            }
+        } else {
+            if (id.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill all fields.");
+            } else if (id.length() != 5 || !id.matches("\\d+")) {
+                JOptionPane.showMessageDialog(this, "Invalid ID. Please enter a 5-digit number.");
+            } else if (password.length() < 6 || password.length() > 10 || !password.matches("[a-zA-Z0-9]+")) {
+                JOptionPane.showMessageDialog(this, "Password must be 6 to 10 characters long and contain only a-z, A-Z, and 0-9.");
+            } else {
+                try {
+                    if (user.verifyUser(userRole, id, password)) {
+                        JOptionPane.showMessageDialog(this, "Login successful as " + userRole);
+                        userclass();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Invalid credentials.");
+                    }
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(this, "Error accessing the database.");
+                }
             }
         }
     }
 }
 
+
 class Admin extends JFrame implements ActionListener {
 
-    JButton addCourseButton, courseListButton, addFacultyButton, facultyListButton, addStudentButton, studentListButton;
+    JButton manageDepartmentButton, addAdminButton, addFacultyButton, facultyListButton, addStudentButton, studentListButton, backButton;
 
     Admin() {
         ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
@@ -236,37 +307,47 @@ class Admin extends JFrame implements ActionListener {
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(null);
         this.setLocationRelativeTo(null);
+		this.setVisible(true);
 
-        getContentPane().setBackground(new Color(240, 240, 255));
+        getContentPane().setBackground(new Color(240, 255, 255));
 
         JLabel dashBoard = createLabel("Admin Dashboard", 300, 30);
 
-        ImageIcon addCourseIcon = new ImageIcon("E:/UMS/image/add_course.png");
-        ImageIcon courseListIcon = new ImageIcon("E:/UMS/image/course_list.png");
+        ImageIcon manageDepartmentIcon = new ImageIcon("E:/UMS/image/departmnent.png");
+        ImageIcon addAdminIcon = new ImageIcon("E:/UMS/image/add_Admin.png");
         ImageIcon addFacultyIcon = new ImageIcon("E:/UMS/image/add_faculty.png");
         ImageIcon facultyListIcon = new ImageIcon("E:/UMS/image/faculty_list.png");
         ImageIcon addStudentIcon = new ImageIcon("E:/UMS/image/add_student.png");
         ImageIcon studentListIcon = new ImageIcon("E:/UMS/image/student_list.png");
 
-        addCourseButton = createButton(addCourseIcon, 50, 100);
-        JLabel addCourseLabel = createLabel("Add Course", 50, 260);
+        manageDepartmentButton = createButton(manageDepartmentIcon, 100, 100);
+        JLabel manageDepartment = createLabel("Manage Department", 50, 210);
         
-        courseListButton = createButton(courseListIcon, 50, 350);
-        JLabel courseListLabel = createLabel("Course List", 50, 510);
+        addAdminButton = createButton(addAdminIcon, 100, 300);
+        JLabel addAdmin = createLabel("Add Admin", 50, 410);
         
-        addFacultyButton = createButton(addFacultyIcon, 300, 100);
-        JLabel addFacultyLabel = createLabel("Add Faculty", 300, 260);
+        addFacultyButton = createButton(addFacultyIcon, 350, 100);
+        JLabel addFaculty = createLabel("Add Faculty", 300, 210);
         
-        facultyListButton = createButton(facultyListIcon, 300, 350);
-        JLabel facultyListLabel = createLabel("Faculty List", 300, 510);
+        facultyListButton = createButton(facultyListIcon, 350, 300);
+        JLabel facultyList = createLabel("Faculty List", 300, 410);
         
-        addStudentButton = createButton(addStudentIcon, 550, 100);
-        JLabel addStudentLabel = createLabel("Add Student", 550, 260);
+        addStudentButton = createButton(addStudentIcon, 600, 100);
+        JLabel addStudent = createLabel("Add Student", 550, 210);
         
-        studentListButton = createButton(studentListIcon, 550, 350);
-        JLabel studentListLabel = createLabel("Student List", 550, 510);
-
-        this.setVisible(true);
+        studentListButton = createButton(studentListIcon, 600, 300);
+        JLabel studentList = createLabel("Student List", 550, 410);
+		
+		backButton = new JButton("Back");
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.setBounds(550, 510, 200, 30);
+        backButton.addActionListener(this);
+		this.add(backButton);
+		
+        
     }
     
     private JLabel createLabel(String text, int x, int y) {
@@ -281,42 +362,235 @@ class Admin extends JFrame implements ActionListener {
 
     private JButton createButton(ImageIcon icon, int x, int y) {
         JButton button = new JButton(icon);
-        button.setBounds(x, y, 200, 150);
-        button.setBackground(new Color(204, 255, 255));
+        button.setBounds(x, y, 100, 100);
+        button.setBackground(new Color(255, 255, 255));
         button.setHorizontalTextPosition(SwingConstants.CENTER);
         button.setVerticalTextPosition(SwingConstants.CENTER);
         button.setFocusPainted(false);
         button.addActionListener(this);
         this.add(button);
-        
         return button;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == addCourseButton) {
-            new AddCourse();
-        } else if (e.getSource() == courseListButton) {
-            new CourseList();
+        if (e.getSource() == manageDepartmentButton) {
+            new ManageDepartment();
+			this.dispose();
+        } else if (e.getSource() == addAdminButton) {
+            new AddAdmin();
+			this.dispose();
         } else if (e.getSource() == addFacultyButton) {
             new AddFaculty();
+			this.dispose();
         } else if (e.getSource() == facultyListButton) {
             new FacultyList();
+			this.dispose();
         } else if (e.getSource() == addStudentButton) {
             new AddStudent();
+			this.dispose();
         } else if (e.getSource() == studentListButton) {
             new StudentList();
+			this.dispose();
+        } else if (e.getSource() == backButton) {
+            new Login();
+			this.dispose();
         }
     }
 }
 
-class AddCourse {
-	
+class ManageDepartment extends JFrame {
+    private JComboBox<String> departmentComboBox;
+    private JTextField departmentTextField;
+    private ArrayList<String> departments;
+
+    public ManageDepartment() {
+        ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
+        this.setIconImage(image.getImage());
+        this.setTitle("Manage Department");
+        this.setLayout(null);
+        this.setSize(500, 300);
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.getContentPane().setBackground(new Color(240, 248, 255)); 
+        this.setVisible(true);
+        
+        this.departments = new ArrayList<>();
+
+        JLabel titleLabel = new JLabel("Manage Departments");
+        titleLabel.setBounds(150, 10, 300, 30);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(0, 102, 204));
+        this.add(titleLabel);
+
+        JLabel nameLabel = new JLabel("Department Name:");
+        nameLabel.setBounds(30, 60, 150, 25);
+        nameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        this.add(nameLabel);
+
+        departmentTextField = new JTextField();
+        departmentTextField.setBounds(170, 60, 200, 25);
+        departmentTextField.setFont(new Font("Arial", Font.PLAIN, 14));
+        this.add(departmentTextField);
+
+        JButton addButton = new JButton("Add Department");
+        addButton.setBounds(170, 100, 200, 30);
+        addButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addButton.setBackground(new Color(0, 153, 76)); 
+        addButton.setForeground(Color.WHITE);
+        this.add(addButton);
+        
+        JButton deleteButton = new JButton("Delete Department");
+        deleteButton.setBounds(170, 200, 200, 30);
+        deleteButton.setFont(new Font("Arial", Font.BOLD, 14));
+        deleteButton.setBackground(new Color(204, 0, 0)); 
+        deleteButton.setForeground(Color.WHITE);
+        this.add(deleteButton);
+        
+        JLabel comboBoxLabel = new JLabel("Existing Departments:");
+        comboBoxLabel.setBounds(30, 150, 200, 25);
+        comboBoxLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        this.add(comboBoxLabel);
+         
+        String[] departments = Methods.readFile("departments.txt");
+        departmentComboBox = new JComboBox<>(departments);
+        departmentComboBox.setBounds(170, 150, 200, 25);
+        departmentComboBox.setFont(new Font("Arial", Font.PLAIN, 14));
+        this.add(departmentComboBox);
+
+        addButton.addActionListener(e -> addDepartment());
+        deleteButton.addActionListener(e -> deleteDepartment());
+    }
+
+    private void addDepartment() {
+        String department = departmentTextField.getText().trim();
+        if (!department.isEmpty()) {
+            departments.add(department);
+            saveInFile(department);
+            departmentTextField.setText("");
+            departmentComboBox.addItem(department);
+            JOptionPane.showMessageDialog(this, "Department added successfully!", 
+                "Success", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Please enter a department name.", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void deleteDepartment() {
+        String selectedDepartment = (String) departmentComboBox.getSelectedItem();
+        if (selectedDepartment != null) {
+            departments.remove(selectedDepartment);
+            updateFile();
+            departmentComboBox.removeItem(selectedDepartment);
+            JOptionPane.showMessageDialog(this, "Department deleted successfully!", 
+                "Success", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Please select a department to delete.", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void saveInFile(String department) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("departments.txt", true))) {
+            writer.write(department);
+            writer.newLine();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error saving department: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void updateFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("departments.txt"))) {
+            for (String department : departments) {
+                writer.write(department);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error updating department file: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 }
 
-class CourseList {
-	
+class AddAdmin extends JFrame {
+    private JTextField idField;
+    private JPasswordField passwordField;
+
+    public AddAdmin() {
+        this.setTitle("Add Admin");
+        this.setSize(400, 300);
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setLayout(null);
+        this.setLocationRelativeTo(null);
+        
+        JLabel idLabel = new JLabel("ID:");
+        idLabel.setBounds(50, 50, 100, 30);
+        this.add(idLabel);
+
+        idField = new JTextField();
+        idField.setBounds(150, 50, 200, 30);
+        this.add(idField);
+
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordLabel.setBounds(50, 100, 100, 30);
+        this.add(passwordLabel);
+
+        passwordField = new JPasswordField();
+        passwordField.setBounds(150, 100, 200, 30);
+        this.add(passwordField);
+
+        JButton saveButton = new JButton("Save");
+        saveButton.setBounds(150, 150, 100, 30);
+        this.add(saveButton);
+        
+        JButton backButton = new JButton("Back");
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.setBounds(150, 200, 150, 30);
+        backButton.addActionListener(e -> {
+            new Admin();
+            this.dispose();
+        });
+		this.add(backButton);
+
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String id = idField.getText();
+                String password = new String(passwordField.getPassword());
+
+                if (id.isEmpty() || password.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "Both fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    addAdmin();
+                }
+            }
+        });
+
+        this.setVisible(true);
+    }
+
+    private void addAdmin() {
+        String id = idField.getText();
+        String password = new String(passwordField.getPassword());
+        String userRole = "Admin";
+
+        if (id.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill all fields.");
+        } else {
+            try {
+                user.saveUser(userRole, id, password);
+                JOptionPane.showMessageDialog(this, "Account created successfully!");
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error saving to the database.");
+            }
+        }
+    }
 }
+
 
 class AddFaculty {
 	
@@ -350,7 +624,7 @@ class AddStudent  extends JFrame {
         idLabel.setBounds(50, 100, 200, 30);
         idField = new JTextField();
         idField.setBounds(200, 100, 200, 30);
-
+		
         JLabel passwordLabel = new JLabel("Password:");
         passwordLabel.setBounds(50, 150, 200, 30);
         passwordField = new JPasswordField();
@@ -361,28 +635,28 @@ class AddStudent  extends JFrame {
         String[] levels = {"Undergraduate", "Postgraduate"};
         levelComboBox = new JComboBox<>(levels);
         levelComboBox.setBounds(200, 200, 200, 30);
-
+		
         JLabel departmentLabel = new JLabel("Department:");
         departmentLabel.setBounds(50, 250, 200, 30);
-        String[] departments = {"CSE", "EEE", "BBA", "LAW"};
+        String[] departments = Methods.readFile("departments.txt");
         departmentComboBox = new JComboBox<>(departments);
         departmentComboBox.setBounds(200, 250, 200, 30);
-
+		
         JLabel studentNameLabel = new JLabel("Student Name:");
         studentNameLabel.setBounds(50, 300, 200, 30);
         studentNameField = new JTextField();
         studentNameField.setBounds(200, 300, 200, 30);
-
+		
         JLabel fathersNameLabel = new JLabel("Father's Name:");
         fathersNameLabel.setBounds(50, 350, 200, 30);
         fathersNameField = new JTextField();
         fathersNameField.setBounds(200, 350, 200, 30);
-
+		
         JLabel mothersNameLabel = new JLabel("Mother's Name:");
         mothersNameLabel.setBounds(50, 400, 200, 30);
         mothersNameField = new JTextField();
         mothersNameField.setBounds(200, 400, 200, 30);
-
+		
         JLabel nationalityLabel = new JLabel("Nationality:");
         nationalityLabel.setBounds(50, 450, 200, 30);
         nationalityField = new JTextField();
@@ -421,9 +695,9 @@ class AddStudent  extends JFrame {
         this.add(dobLabel);
         this.add(dobField);
         this.add(submitButton);
-
         this.setVisible(true);
     }
+	
 	
 	private void addStudent() {
         String id = idField.getText();
@@ -434,12 +708,17 @@ class AddStudent  extends JFrame {
 		String mothersName = mothersNameField.getText();
 		String nationality = nationalityField.getText();
 		String dob = dobField.getText();
+		String level = (String) levelComboBox.getSelectedItem();
+		String department = (String) departmentComboBox.getSelectedItem();
+		
+		
 
         if (id.isEmpty() || password.isEmpty()|| studentName.isEmpty() || fathersName.isEmpty()|| mothersName.isEmpty()|| nationality.isEmpty()|| dob.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill all fields.");
         } else {
             try {
                 user.saveUser(userRole, id, password);
+				Students.saveStudent(id, password, studentName, fathersName, mothersName, nationality, dob, level, department);
                 JOptionPane.showMessageDialog(this, "Account created successfully!");
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this, "Error saving to the database.");
@@ -452,7 +731,6 @@ class AddStudent  extends JFrame {
 class StudentList {
 	
 }
-
 
 class Main {
     public static void main(String[] args) {
