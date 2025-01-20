@@ -24,7 +24,7 @@ class Methods {
     }
 }
 
-class user {
+class User {
     private static final String FILE_NAME = "user.txt";
 
     public static void saveUser(String userRole, String id, String password) throws IOException {
@@ -64,16 +64,58 @@ class Students {
 }
 
 class Faculties {
-	
-	private static final String FILE_NAME = "Faculties.txt";
-    public static void saveFaculty(String id, String password, String name, String gender, String nationality, String dob, String address, String phone, String email) throws IOException {
-        String facultyData = name + "," + gender + "," + nationality + "," + dob + "," + address + "," + phone + "," + email;
+    private static final String FILE_NAME = "Faculties.txt";
+
+    public static void saveFaculty(String id, String password, String name, String gender, String nationality, String dob, String phone, String email, String[] programs, String[] cgpas, String department) throws IOException {
+        StringBuilder facultyData = new StringBuilder(id + "," + password + "," + name + "," + gender + "," + nationality + "," + dob + "," + phone + "," + email + "," + department);
+        for (int i = 0; i < programs.length; i++) {
+            facultyData.append(",").append(programs[i]).append(",").append(cgpas[i]);
+        }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
-            writer.write(facultyData);
+            writer.write(facultyData.toString());
             writer.newLine();
         }
     }
 }
+
+class FacultyIdName  {
+    private static final String FILE_NAME = "FacultyIdName.txt";
+
+    public static void saveFacultyIdName(String id, String name) throws IOException {
+        StringBuilder facultyData = new StringBuilder(id + "," + name );
+		
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
+            writer.write(facultyData.toString());
+            writer.newLine();
+        }
+    }
+}
+
+class Courses {
+    public static final String FILE_NAME = "Courses.txt";
+
+    public static void saveCourse(String department, String courseName, String section, String facultyId, String facultyName, int credits) throws IOException {
+        String courseData = department + "," + courseName + "," + credits + "," + section + "," + facultyId + "," + facultyName;
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
+            writer.write(courseData);
+            writer.newLine();
+        }
+    }
+
+    public static String[][] loadCourses() {
+        ArrayList<String[]> courseList = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                courseList.add(line.split(","));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return courseList.toArray(new String[0][0]);
+    }
+}
+
 
 class MyFrame extends JFrame implements ActionListener {
     private JButton button1, button2;
@@ -254,15 +296,16 @@ class Login extends JFrame {
     }
 
     public void userclass() {
-        String userRole = (String) userRoleComboBox.getSelectedItem();
-        if (userRole.matches("Admin")) {
-            new Admin();
-        } else if (userRole.matches("Faculty")) {
-            new Faculty();
-        } else if (userRole.matches("Student")) {
-            new Student();
-        }
-    }
+		String userRole = (String) userRoleComboBox.getSelectedItem();
+		if (userRole.matches("Admin")) {
+			new Admin();
+		} else if (userRole.matches("Faculty")) {
+			new Faculty(idField.getText()); // Pass faculty ID
+		} else if (userRole.matches("Student")) {
+			new Student(idField.getText()); // Pass student ID
+		}
+	}
+
 
     private void idAndPassCheck() {
         String id = idField.getText();
@@ -274,7 +317,7 @@ class Login extends JFrame {
                 JOptionPane.showMessageDialog(this, "Please fill all fields.");
             } else {
                 try {
-                    if (user.verifyUser(userRole, id, password)) {
+                    if (User.verifyUser(userRole, id, password)) {
                         JOptionPane.showMessageDialog(this, "Login successful as " + userRole);
                         userclass();
                     } else {
@@ -293,7 +336,7 @@ class Login extends JFrame {
                 JOptionPane.showMessageDialog(this, "Password must be 6 to 10 characters long and contain only a-z, A-Z, and 0-9.");
             } else {
                 try {
-                    if (user.verifyUser(userRole, id, password)) {
+                    if (User.verifyUser(userRole, id, password)) {
                         JOptionPane.showMessageDialog(this, "Login successful as " + userRole);
                         userclass();
                     } else {
@@ -309,7 +352,7 @@ class Login extends JFrame {
 
 class Admin extends JFrame implements ActionListener {
 
-    JButton manageDepartmentButton, addAdminButton, addFacultyButton, facultyListButton, addStudentButton, studentListButton, backButton;
+    JButton manageDepartmentButton, addAdminButton, addFacultyButton, manageCourseButton, addStudentButton, studentListButton, backButton;
 
     Admin() {
         ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
@@ -328,7 +371,7 @@ class Admin extends JFrame implements ActionListener {
         ImageIcon manageDepartmentIcon = new ImageIcon("E:/UMS/image/departmnent.png");
         ImageIcon addAdminIcon = new ImageIcon("E:/UMS/image/add_Admin.png");
         ImageIcon addFacultyIcon = new ImageIcon("E:/UMS/image/add_faculty.png");
-        ImageIcon facultyListIcon = new ImageIcon("E:/UMS/image/faculty_list.png");
+        ImageIcon manageCourseIcon = new ImageIcon("E:/UMS/image/manage_course.png");
         ImageIcon addStudentIcon = new ImageIcon("E:/UMS/image/add_student.png");
         ImageIcon studentListIcon = new ImageIcon("E:/UMS/image/student_list.png");
 
@@ -339,10 +382,10 @@ class Admin extends JFrame implements ActionListener {
         JLabel addAdmin = createLabel("Add Admin", 50, 410);
         
         addFacultyButton = createButton(addFacultyIcon, 350, 100);
-        JLabel addFaculty = createLabel("Add Faculty", 300, 210);
+        JLabel addFaculty = createLabel("Manage Faculty", 300, 210);
         
-        facultyListButton = createButton(facultyListIcon, 350, 300);
-        JLabel facultyList = createLabel("Faculty List", 300, 410);
+        manageCourseButton = createButton(manageCourseIcon, 350, 300);
+        JLabel manageCourse = createLabel("Manage Course", 300, 410);
         
         addStudentButton = createButton(addStudentIcon, 600, 100);
         JLabel addStudent = createLabel("Add Student", 550, 210);
@@ -395,8 +438,8 @@ class Admin extends JFrame implements ActionListener {
         } else if (e.getSource() == addFacultyButton) {
             new AddFaculty();
 			this.dispose();
-        } else if (e.getSource() == facultyListButton) {
-            new FacultyList();
+        } else if (e.getSource() == manageCourseButton) {
+            new ManageCourse();
 			this.dispose();
         } else if (e.getSource() == addStudentButton) {
             new AddStudent();
@@ -411,17 +454,18 @@ class Admin extends JFrame implements ActionListener {
     }
 }
 
-class ManageDepartment extends JFrame {
+class ManageDepartment extends JFrame implements ActionListener {
     private JComboBox<String> departmentComboBox;
     private JTextField departmentTextField;
     private ArrayList<String> departments;
+    private JButton backButton;
 
     public ManageDepartment() {
         ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
         this.setIconImage(image.getImage());
         this.setTitle("Manage Department");
         this.setLayout(null);
-        this.setSize(500, 300);
+        this.setSize(500, 360);
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.getContentPane().setBackground(new Color(240, 248, 255)); 
         this.setVisible(true);
@@ -457,7 +501,7 @@ class ManageDepartment extends JFrame {
         deleteButton.setBackground(new Color(204, 0, 0)); 
         deleteButton.setForeground(Color.WHITE);
         this.add(deleteButton);
-        
+		
         JLabel comboBoxLabel = new JLabel("Existing Departments:");
         comboBoxLabel.setBounds(30, 150, 200, 25);
         comboBoxLabel.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -468,9 +512,19 @@ class ManageDepartment extends JFrame {
         departmentComboBox.setBounds(170, 150, 200, 25);
         departmentComboBox.setFont(new Font("Arial", Font.PLAIN, 14));
         this.add(departmentComboBox);
+		
+		backButton = new JButton("Back");
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.setBounds(170, 250, 200, 30);
+        backButton.addActionListener(this);
+		this.add(backButton);
 
         addButton.addActionListener(e -> addDepartment());
         deleteButton.addActionListener(e -> deleteDepartment());
+		backButton.addActionListener(e -> { new Admin(); this.dispose(); });
     }
 
     private void addDepartment() {
@@ -523,6 +577,10 @@ class ManageDepartment extends JFrame {
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
 }
 
 class AddAdmin extends JFrame {
@@ -566,7 +624,7 @@ class AddAdmin extends JFrame {
             new Admin();
             this.dispose();
         });
-		this.add(backButton);
+        this.add(backButton);
 
         saveButton.addActionListener(new ActionListener() {
             @Override
@@ -594,8 +652,10 @@ class AddAdmin extends JFrame {
             JOptionPane.showMessageDialog(this, "Please fill all fields.");
         } else {
             try {
-                user.saveUser(userRole, id, password);
+                User.saveUser(userRole, id, password);
                 JOptionPane.showMessageDialog(this, "Account created successfully!");
+                idField.setText("");
+                passwordField.setText("");
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this, "Error saving to the database.");
             }
@@ -604,37 +664,36 @@ class AddAdmin extends JFrame {
 }
 
 class AddFaculty extends JFrame implements ActionListener {
-    private JLabel idLabel, passwordLabel, fullNameLabel, dobLabel, genderLabel, nationalityLabel, addressLabel, phoneLabel, emailLabel;
-    private JTextField idTF, passwordTF, fullNameTF, dobTF, streetTF, cityTF, stateTF, zipTF, phoneTF, emailTF;
+    private JLabel idLabel, passwordLabel, fullNameLabel, dobLabel, genderLabel, nationalityLabel, phoneLabel, emailLabel, educationLabel, departmentLabel;
+    private JTextField idTF, passwordTF, fullNameTF, dobTF, phoneTF, emailTF, searchTF;
+    private JTextField[] programTF, cgpaTF;
     private JRadioButton maleRB, femaleRB, otherRB;
     private ButtonGroup genderGroup;
-    private JComboBox<String> nationalityComboBox;
-
-    private JButton submitButton, resetButton, deleteButton, updateButton, searchButton;
-
+    private JComboBox<String> nationalityComboBox, departmentComboBox;
+    private JButton submitButton, resetButton, editButton, deleteButton, searchButton;
     private JTable table;
     private DefaultTableModel tableModel;
 
     public AddFaculty() {
-       
-        this.setTitle("Faculty Management System");
-        this.setSize(950, 850);
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setTitle("Manage Faculty");
+        this.setSize(1300, 850);
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(null);
         this.setLocationRelativeTo(null);
+		this.setVisible(true);
 
-        
+        String[] departments = Methods.readFile("departments.txt");
+        departmentComboBox = new JComboBox<>(departments);
+
         JPanel inputPanel = new JPanel();
         inputPanel.setLayout(null);
-        inputPanel.setBounds(10, 10, 450, 600);
+        inputPanel.setBounds(10, 10, 450, 650);
         inputPanel.setBorder(BorderFactory.createTitledBorder("Add Faculty Details"));
         this.add(inputPanel);
 
-        
         idLabel = new JLabel("ID:");
         idLabel.setBounds(20, 30, 100, 30);
         inputPanel.add(idLabel);
-
         idTF = new JTextField();
         idTF.setBounds(150, 30, 200, 30);
         inputPanel.add(idTF);
@@ -642,7 +701,6 @@ class AddFaculty extends JFrame implements ActionListener {
         passwordLabel = new JLabel("Password:");
         passwordLabel.setBounds(20, 70, 100, 30);
         inputPanel.add(passwordLabel);
-
         passwordTF = new JTextField();
         passwordTF.setBounds(150, 70, 200, 30);
         inputPanel.add(passwordTF);
@@ -650,7 +708,6 @@ class AddFaculty extends JFrame implements ActionListener {
         fullNameLabel = new JLabel("Full Name:");
         fullNameLabel.setBounds(20, 110, 100, 30);
         inputPanel.add(fullNameLabel);
-
         fullNameTF = new JTextField();
         fullNameTF.setBounds(150, 110, 200, 30);
         inputPanel.add(fullNameTF);
@@ -658,7 +715,6 @@ class AddFaculty extends JFrame implements ActionListener {
         dobLabel = new JLabel("Date of Birth:");
         dobLabel.setBounds(20, 150, 100, 30);
         inputPanel.add(dobLabel);
-
         dobTF = new JTextField();
         dobTF.setBounds(150, 150, 200, 30);
         inputPanel.add(dobTF);
@@ -666,19 +722,16 @@ class AddFaculty extends JFrame implements ActionListener {
         genderLabel = new JLabel("Gender:");
         genderLabel.setBounds(20, 190, 100, 30);
         inputPanel.add(genderLabel);
-
         maleRB = new JRadioButton("Male");
         maleRB.setBounds(150, 190, 70, 30);
         femaleRB = new JRadioButton("Female");
         femaleRB.setBounds(230, 190, 80, 30);
         otherRB = new JRadioButton("Other");
         otherRB.setBounds(320, 190, 80, 30);
-
         genderGroup = new ButtonGroup();
         genderGroup.add(maleRB);
         genderGroup.add(femaleRB);
         genderGroup.add(otherRB);
-
         inputPanel.add(maleRB);
         inputPanel.add(femaleRB);
         inputPanel.add(otherRB);
@@ -686,182 +739,371 @@ class AddFaculty extends JFrame implements ActionListener {
         nationalityLabel = new JLabel("Nationality:");
         nationalityLabel.setBounds(20, 230, 100, 30);
         inputPanel.add(nationalityLabel);
-
         nationalityComboBox = new JComboBox<>(new String[]{"Bangladeshi", "Foreign"});
         nationalityComboBox.setBounds(150, 230, 200, 30);
         inputPanel.add(nationalityComboBox);
 
-        addressLabel = new JLabel("Address:");
-        addressLabel.setBounds(20, 270, 100, 30);
-        inputPanel.add(addressLabel);
+        departmentLabel = new JLabel("Department:");
+        departmentLabel.setBounds(20, 270, 100, 30);
+        inputPanel.add(departmentLabel);
+        departmentComboBox.setBounds(150, 270, 200, 30);
+        inputPanel.add(departmentComboBox);
 
-        streetTF = new JTextField("Street");
-        streetTF.setBounds(150, 270, 200, 30);
-        inputPanel.add(streetTF);
-
-        cityTF = new JTextField("City");
-        cityTF.setBounds(150, 310, 200, 30);
-        inputPanel.add(cityTF);
-
-        stateTF = new JTextField("State/Province");
-        stateTF.setBounds(150, 350, 200, 30);
-        inputPanel.add(stateTF);
-
-        zipTF = new JTextField("ZIP/Postal Code");
-        zipTF.setBounds(150, 390, 200, 30);
-        inputPanel.add(zipTF);
+        educationLabel = new JLabel("Education Qualification:");
+        educationLabel.setBounds(20, 350, 200, 30);
+        inputPanel.add(educationLabel);
+        programTF = new JTextField[3];
+        cgpaTF = new JTextField[3];
+        for (int i = 0; i < 3; i++) {
+			programTF[i] = new JTextField();
+			programTF[i].setBounds(20, 390 + i * 40, 200, 30);
+			programTF[i].setText("");
+			inputPanel.add(programTF[i]);
+			cgpaTF[i] = new JTextField();
+			cgpaTF[i].setBounds(230, 390 + i * 40, 120, 30);
+			cgpaTF[i].setText("");
+			inputPanel.add(cgpaTF[i]);
+		}
 
         phoneLabel = new JLabel("Phone Number:");
-        phoneLabel.setBounds(20, 430, 120, 30);
-        inputPanel.add(phoneLabel);
-
         phoneTF = new JTextField();
-        phoneTF.setBounds(150, 430, 200, 30);
-        inputPanel.add(phoneTF);
+		phoneLabel.setBounds(20, 510, 120, 30);
+		phoneTF.setBounds(150, 510, 200, 30);
+		inputPanel.add(phoneLabel);
+		inputPanel.add(phoneTF);
 
         emailLabel = new JLabel("Email Address:");
-        emailLabel.setBounds(20, 470, 120, 30);
-        inputPanel.add(emailLabel);
-
         emailTF = new JTextField();
-        emailTF.setBounds(150, 470, 200, 30);
-        inputPanel.add(emailTF);
+		emailLabel.setBounds(20, 550, 120, 30);
+		emailTF.setBounds(150, 550, 200, 30);
+		inputPanel.add(emailLabel);
+		inputPanel.add(emailTF);
 
-       
         submitButton = new JButton("Submit");
-        submitButton.setBounds(20, 520, 100, 30);
+        submitButton.setBounds(20, 590, 100, 30);
         submitButton.addActionListener(this);
         inputPanel.add(submitButton);
-
         resetButton = new JButton("Reset");
-        resetButton.setBounds(140, 520, 100, 30);
+        resetButton.setBounds(140, 590, 100, 30);
         resetButton.addActionListener(this);
         inputPanel.add(resetButton);
 
-        deleteButton = new JButton("Delete");
-        deleteButton.setBounds(260, 520, 100, 30);
-        deleteButton.addActionListener(this);
-        inputPanel.add(deleteButton);
-
-       
         JPanel tablePanel = new JPanel();
         tablePanel.setLayout(new BorderLayout());
-        tablePanel.setBounds(470, 10, 450, 600);
+        tablePanel.setBounds(470, 10, 800, 600);
         tablePanel.setBorder(BorderFactory.createTitledBorder("Faculty List"));
         this.add(tablePanel);
 
-       
         tableModel = new DefaultTableModel();
-        tableModel.setColumnIdentifiers(new String[]{"ID", "Password", "Full Name", "DOB", "Gender", "Nationality", "Address", "Phone", "Email"});
+        tableModel.setColumnIdentifiers(new String[]{"ID", "Password", "Full Name", "DOB", "Gender", "Nationality", "Phone", "Email", "Department", "Program 1", "CGPA 1", "Program 2", "CGPA 2", "Program 3", "CGPA 3"});
         table = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(table);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
-
-   
-        updateButton = new JButton("Update");
-        updateButton.setBounds(20, 620, 100, 30);
-        updateButton.addActionListener(this);
-        this.add(updateButton);
-
-        searchButton = new JButton("Search");
-        searchButton.setBounds(140, 620, 100, 30);
+		
+		JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout());
+        buttonPanel.setBounds(470, 620, 800, 50);
+        buttonPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
+        this.add(buttonPanel);
+		
+		editButton = new JButton("Edit");
+        editButton.addActionListener(this);
+        buttonPanel.add(editButton);
+		
+		deleteButton = new JButton("Delete");
+        deleteButton.addActionListener(this);
+        buttonPanel.add(deleteButton);
+		
+		searchTF = new JTextField(15);
+        buttonPanel.add(searchTF);
+		
+		searchButton = new JButton("Search by ID");
         searchButton.addActionListener(this);
-        this.add(searchButton);
+        buttonPanel.add(searchButton);
+		
+		readFile();
 
-        this.setVisible(true);
+        
     }
+	
+	private void readFile() {
+		try (BufferedReader reader = new BufferedReader(new FileReader("Faculties.txt"))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				String[] fields = line.split(",");
+				Object[] rowData = new Object[15];
+				System.arraycopy(fields, 0, rowData, 0, Math.min(fields.length, 15));
+				tableModel.addRow(rowData);
+			}
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, "Error loading existing data: " + e.getMessage());
+		}
+	}
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == submitButton) {
-            String id = idTF.getText();
-            String password = passwordTF.getText();
-            String name = fullNameTF.getText();
-            String dob = dobTF.getText();
-            String gender = maleRB.isSelected() ? "Male" : femaleRB.isSelected() ? "Female" : "Other";
-            String nationality = (String) nationalityComboBox.getSelectedItem();
-            String address = streetTF.getText() + ", " + cityTF.getText() + ", " + stateTF.getText() + ", " + zipTF.getText();
-            String phone = phoneTF.getText();
-            String email = emailTF.getText();
-
-           
-            if (id.isEmpty() || password.isEmpty() || name.isEmpty() || dob.isEmpty() || phone.isEmpty() || email.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "All fields must be filled!");
-                return;
-            }
-
-           
-            try {
-                Faculties.saveFaculty(id, password, name, gender, nationality, dob, address, phone, email);
-                tableModel.addRow(new Object[]{id, password, name, dob, gender, nationality, address, phone, email});
-                JOptionPane.showMessageDialog(this, "Faculty saved successfully!");
-                resetFields();
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Error saving faculty data: " + ex.getMessage());
-            }
+			submit();
         } else if (e.getSource() == resetButton) {
             resetFields();
+        } else if (e.getSource() == editButton) {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(this, "Please select a row to edit.");
+                return;
+            }
+            update(selectedRow);
         } else if (e.getSource() == deleteButton) {
             int selectedRow = table.getSelectedRow();
-            if (selectedRow != -1) {
-                tableModel.removeRow(selectedRow);
-            } else {
+            if (selectedRow == -1) {
                 JOptionPane.showMessageDialog(this, "Please select a row to delete.");
+                return;
             }
-        } else if (e.getSource() == updateButton) {
-            int selectedRow = table.getSelectedRow();
-            if (selectedRow != -1) {
-                tableModel.setValueAt(idTF.getText(), selectedRow, 0);
-                tableModel.setValueAt(passwordTF.getText(), selectedRow, 1);
-                tableModel.setValueAt(fullNameTF.getText(), selectedRow, 2);
-                tableModel.setValueAt(dobTF.getText(), selectedRow, 3);
-                tableModel.setValueAt(maleRB.isSelected() ? "Male" : femaleRB.isSelected() ? "Female" : "Other", selectedRow, 4);
-                tableModel.setValueAt(nationalityComboBox.getSelectedItem(), selectedRow, 5);
-                tableModel.setValueAt(streetTF.getText() + ", " + cityTF.getText() + ", " + stateTF.getText() + ", " + zipTF.getText(), selectedRow, 6);
-                tableModel.setValueAt(phoneTF.getText(), selectedRow, 7);
-                tableModel.setValueAt(emailTF.getText(), selectedRow, 8);
-            } else {
-                JOptionPane.showMessageDialog(this, "Please select a row to update.");
-            }
+            delete(selectedRow);
         } else if (e.getSource() == searchButton) {
-            String searchId = JOptionPane.showInputDialog(this, "Enter Faculty ID to search:");
-            if (searchId != null && !searchId.trim().isEmpty()) {
-                boolean found = false;
-                for (int i = 0; i < tableModel.getRowCount(); i++) {
-                    if (tableModel.getValueAt(i, 0).toString().equals(searchId)) {
-                        table.setRowSelectionInterval(i, i);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    JOptionPane.showMessageDialog(this, "Faculty ID not found.");
-                }
+            String searchId = searchTF.getText().trim();
+            searchById(searchId);
+        }
+    }
+	
+	private void submit() {
+		String userRole = "Faculty";
+		String id = idTF.getText();
+		String password = passwordTF.getText();
+		String name = fullNameTF.getText();
+		String dob = dobTF.getText();
+		String gender = maleRB.isSelected() ? "Male" : femaleRB.isSelected() ? "Female" : "Other";
+		String nationality = (String) nationalityComboBox.getSelectedItem();
+		String department = (String) departmentComboBox.getSelectedItem();
+		String phone = phoneTF.getText();
+		String email = emailTF.getText();
+		String[] programs = new String[3];
+		String[] cgpas = new String[3];
+		for (int i = 0; i < 3; i++) {
+			programs[i] = programTF[i].getText();
+			cgpas[i] = cgpaTF[i].getText();
+		}
+
+		if (id.isEmpty() || password.isEmpty() || name.isEmpty() || dob.isEmpty() || phone.isEmpty() || email.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "All fields must be filled!");
+			return;
+		}
+
+		try {
+			FacultyIdName.saveFacultyIdName( id, name);
+			User.saveUser(userRole, id, password);
+			Faculties.saveFaculty(id, password, name, gender, nationality, dob, phone, email, programs, cgpas, department);
+			tableModel.addRow(new Object[]{id, password, name, dob, gender, nationality, phone, email, department, programs[0], cgpas[0], programs[1], cgpas[1], programs[2], cgpas[2]});
+			JOptionPane.showMessageDialog(this, "Faculty saved successfully!");
+			resetFields();
+		} catch (IOException ex) {
+			JOptionPane.showMessageDialog(this, "Error saving faculty data: " + ex.getMessage());
+		}
+	}
+
+
+    private void update(int selectedRow) {
+        String id = (String) tableModel.getValueAt(selectedRow, 0);
+        String updatedDetails = JOptionPane.showInputDialog(this, "Update details for ID: " + id, tableModel.getDataVector().elementAt(selectedRow));
+        if (updatedDetails != null) {
+            String[] fields = updatedDetails.split(",");
+            for (int i = 0; i < fields.length; i++) {
+                tableModel.setValueAt(fields[i], selectedRow, i);
             }
+            updateFile();
         }
     }
 
+    private void delete(int selectedRow) {
+        String id = (String) tableModel.getValueAt(selectedRow, 0);
+        tableModel.removeRow(selectedRow);
+        updateFile();
+        JOptionPane.showMessageDialog(this, "Deleted record for ID: " + id);
+    }
+
+    private void searchById(String id) {
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            if (tableModel.getValueAt(i, 0).equals(id)) {
+                table.setRowSelectionInterval(i, i);
+                return;
+            }
+        }
+        JOptionPane.showMessageDialog(this, "No record found for ID: " + id);
+    }
+
+    private void updateFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("Faculties.txt"))) {
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                for (int j = 0; j < tableModel.getColumnCount(); j++) {
+                    writer.write((String) tableModel.getValueAt(i, j));
+                    if (j < tableModel.getColumnCount() - 1) writer.write(",");
+                }
+                writer.newLine();
+            }
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Error updating file: " + ex.getMessage());
+        }
+    }
+
+
     private void resetFields() {
-        idTF.setText("");
-        passwordTF.setText("");
-        fullNameTF.setText("");
-        dobTF.setText("");
-        genderGroup.clearSelection();
-        nationalityComboBox.setSelectedIndex(0);
-        streetTF.setText("");
-        cityTF.setText("");
-        stateTF.setText("");
-        zipTF.setText("");
-        phoneTF.setText("");
-        emailTF.setText("");
+        new AddFaculty();
+        this.dispose();
     }
 }
 
-class FacultyList {
-	
-	
-}
+class ManageCourse extends JFrame implements ActionListener {
+    private JComboBox<String> departmentComboBox, facultyComboBox, creditsComboBox;
+    private JTextField courseNameField, sectionField;
+    private JTable courseTable;
+    private DefaultTableModel tableModel;
+	private JButton backButton;
+		
 
+    public ManageCourse() {
+        this.setTitle("Manage Courses");
+        this.setSize(1000, 900);
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setLayout(null);
+
+        JLabel departmentLabel = new JLabel("Department:");
+        departmentLabel.setBounds(30, 30, 100, 25);
+        this.add(departmentLabel);
+
+        departmentComboBox = new JComboBox<>(Methods.readFile("departments.txt"));
+        departmentComboBox.setBounds(150, 30, 200, 25);
+        this.add(departmentComboBox);
+
+        JLabel courseNameLabel = new JLabel("Course Name:");
+        courseNameLabel.setBounds(30, 70, 100, 25);
+        this.add(courseNameLabel);
+
+        courseNameField = new JTextField();
+        courseNameField.setBounds(150, 70, 200, 25);
+        this.add(courseNameField);
+
+        JLabel creditsLabel = new JLabel("Credits:");
+        creditsLabel.setBounds(30, 110, 100, 25);
+        this.add(creditsLabel);
+
+        creditsComboBox = new JComboBox<>(new String[]{"1", "2", "3", "4", "5"});
+        creditsComboBox.setBounds(150, 110, 200, 25);
+        this.add(creditsComboBox);
+
+        JLabel sectionLabel = new JLabel("Section:");
+        sectionLabel.setBounds(30, 150, 100, 25);
+        this.add(sectionLabel);
+
+        sectionField = new JTextField();
+        sectionField.setBounds(150, 150, 200, 25);
+        this.add(sectionField);
+
+        JLabel facultyLabel = new JLabel("Faculty:");
+        facultyLabel.setBounds(30, 190, 100, 25);
+        this.add(facultyLabel);
+
+        facultyComboBox = new JComboBox<>(Methods.readFile("FacultyIdName.txt"));
+        facultyComboBox.setBounds(150, 190, 200, 25);
+        this.add(facultyComboBox);
+
+        JButton addButton = new JButton("Add Course");
+        addButton.setBounds(400, 70, 150, 30);
+        this.add(addButton);
+
+        JButton deleteButton = new JButton("Delete Course");
+        deleteButton.setBounds(400, 110, 150, 30);
+        this.add(deleteButton);
+		
+		backButton = new JButton("Back");
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.setBounds(650, 70, 150, 30);
+        backButton.addActionListener(this);
+		this.add(backButton);
+		backButton.addActionListener(e -> { new Admin(); this.dispose(); });
+
+        tableModel = new DefaultTableModel(new String[]{"Department", "Course Name", "Credits", "Section", "Faculty ID", "Faculty Name"}, 0);
+        courseTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(courseTable);
+        scrollPane.setBounds(30, 250, 920, 550);
+        this.add(scrollPane);
+
+        loadCoursesIntoTable();
+
+        addButton.addActionListener(e -> addCourse());
+        deleteButton.addActionListener(e -> deleteCourse());
+
+        this.getContentPane().setBackground(new Color(230, 240, 255));
+        this.setVisible(true);
+    }
+
+    private void loadCoursesIntoTable() {
+        tableModel.setRowCount(0);
+        String[][] courses = Courses.loadCourses();
+        for (String[] course : courses) {
+            tableModel.addRow(course);
+        }
+    }
+
+    private void addCourse() {
+        String department = (String) departmentComboBox.getSelectedItem();
+        String courseName = courseNameField.getText().trim();
+        int credits = Integer.parseInt((String) creditsComboBox.getSelectedItem());
+        String section = sectionField.getText().trim();
+        String selectedFaculty = (String) facultyComboBox.getSelectedItem();
+
+        String[] facultyDetails = selectedFaculty.split(",");
+        String facultyId = facultyDetails[0].trim();
+        String facultyName = facultyDetails[1].trim();
+
+        if (!courseName.isEmpty() && !section.isEmpty()) {
+            try {
+                Courses.saveCourse(department, courseName, section, facultyId, facultyName, credits);
+                tableModel.addRow(new Object[]{department, courseName, credits, section, facultyId, facultyName});
+                JOptionPane.showMessageDialog(this, "Course added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                courseNameField.setText("");
+                sectionField.setText("");
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Error saving course: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void deleteCourse() {
+        int selectedRow = courseTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            tableModel.removeRow(selectedRow);
+            saveTableToFile();
+            JOptionPane.showMessageDialog(this, "Course deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Please select a course to delete.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void saveTableToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(Courses.FILE_NAME))) {
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                writer.write(tableModel.getValueAt(i, 0) + "," +
+                             tableModel.getValueAt(i, 1) + "," +
+                             tableModel.getValueAt(i, 2) + "," +
+                             tableModel.getValueAt(i, 3) + "," +
+                             tableModel.getValueAt(i, 4) + "," +
+                             tableModel.getValueAt(i, 5));
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+	
+	@Override
+    public void actionPerformed(ActionEvent e) {
+    }
+}
 class AddStudent extends JFrame {
     JTextField idField, passwordField, studentNameField, fathersNameField, mothersNameField, dobField, emailField, phoneField;
     JComboBox<String> levelComboBox, departmentComboBox, nationalityComboBox;
@@ -876,6 +1118,7 @@ class AddStudent extends JFrame {
         this.setLayout(null);
         this.setLocationRelativeTo(null);
         this.getContentPane().setBackground(new Color(240, 248, 255));
+		this.setVisible(true);
         
         JLabel titleLabel = new JLabel("Create Student Account");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
@@ -972,7 +1215,7 @@ class AddStudent extends JFrame {
         this.add(phoneLabel);
         this.add(phoneField);
         this.add(submitButton);
-        this.setVisible(true);
+        
     }
 
     private void addStudent() {
@@ -993,7 +1236,7 @@ class AddStudent extends JFrame {
             JOptionPane.showMessageDialog(this, "Please fill all fields.");
         } else {
             try {
-                user.saveUser(userRole, id, password);
+                User.saveUser(userRole, id, password);
                 Students.saveStudent(id, studentName, fathersName, mothersName, nationality, dob, level, department, email, phoneNumber);
                 JOptionPane.showMessageDialog(this, "Account created successfully!");
             } catch (IOException ex) {
@@ -1095,7 +1338,7 @@ class StudentList extends JFrame implements ActionListener {
     }
 
     private void filterStudents(String department) {
-        tableModel.setRowCount(0); // Clear table
+        tableModel.setRowCount(0); 
         try (BufferedReader reader = new BufferedReader(new FileReader("Students.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -1140,10 +1383,49 @@ class StudentList extends JFrame implements ActionListener {
     private void updateStudent() {
         int selectedRow = studentTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "No student selected.");
+            JOptionPane.showMessageDialog(null, "Please select a student to update.");
             return;
         }
-        JOptionPane.showMessageDialog(this, "Update functionality is not fully implemented.");
+
+        String id = tableModel.getValueAt(selectedRow, 0).toString();
+        String studentName = tableModel.getValueAt(selectedRow, 1).toString();
+        String fathersName = tableModel.getValueAt(selectedRow, 2).toString();
+        String mothersName = tableModel.getValueAt(selectedRow, 3).toString();
+        String nationality = tableModel.getValueAt(selectedRow, 4).toString();
+        String dob = tableModel.getValueAt(selectedRow, 5).toString();
+        String level = tableModel.getValueAt(selectedRow, 6).toString();
+        String department = tableModel.getValueAt(selectedRow, 7).toString();
+        String email = tableModel.getValueAt(selectedRow, 8).toString();
+        String phoneNumber = tableModel.getValueAt(selectedRow, 9).toString();
+
+        String updatedStudentData = id + "," + studentName + "," + fathersName + "," + mothersName + "," + nationality + "," + dob + "," + level + "," + department + "," + email + "," + phoneNumber;
+
+        try {
+            List<String> lines = new ArrayList<>();
+            try (BufferedReader reader = new BufferedReader(new FileReader("Students.txt"))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] data = line.split(",");
+                    if (data[0].equals(id)) {
+                        lines.add(updatedStudentData);
+                    } else {
+                        lines.add(line);
+                    }
+                }
+            }
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("Students.txt", false))) {
+                for (String line : lines) {
+                    writer.write(line);
+                    writer.newLine();
+                }
+            }
+
+            JOptionPane.showMessageDialog(null, "Student information updated successfully!");
+
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error updating student information: " + e.getMessage());
+        }
     }
 
     @Override
