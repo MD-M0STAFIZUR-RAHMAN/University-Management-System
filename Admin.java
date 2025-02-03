@@ -22,6 +22,18 @@ class Methods {
         }
         return List.toArray(new String[0]);
     }
+	
+	public static boolean readStatus() { 
+        File file = new File("status.txt");
+        if (!file.exists()) return false;
+		
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            return Boolean.parseBoolean(reader.readLine().trim());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
 
 class User {
@@ -94,8 +106,8 @@ class FacultyIdName  {
 class Courses {
     public static final String FILE_NAME = "Courses.txt";
 
-    public static void saveCourse(String department, String courseName, String section, String facultyId, String facultyName, int credits) throws IOException {
-        String courseData = department + "," + courseName + "," + credits + "," + section + "," + facultyId + "," + facultyName;
+    public static void saveCourse(String department, String courseName, String section, String facultyId, String facultyName, int credits,String semester ) throws IOException {
+        String courseData = department + "," + courseName + "," + credits + "," + section + "," + facultyId + "," + facultyName + "," + semester;
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
             writer.write(courseData);
             writer.newLine();
@@ -116,12 +128,34 @@ class Courses {
     }
 }
 
+class Semester {
+    private static final String FILE_NAME = "semesters.txt";
+
+    public static void saveSemester( String semesterName) throws IOException {
+        String semesterData = semesterName ;
+        
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, true))) {
+            writer.write(semesterData);
+            writer.newLine();
+        }
+    }
+}
+
+class CurrentSemester {
+    private static final String FILE_NAME = "current_semester.txt";
+
+    public static void saveSemester(String semesterName) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            writer.write(semesterName);
+        }
+    }
+}
 
 class MyFrame extends JFrame implements ActionListener {
     private JButton button1, button2;
 
     MyFrame() {
-        ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
         this.setIconImage(image.getImage());
         this.setTitle("University Management System");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -138,8 +172,8 @@ class MyFrame extends JFrame implements ActionListener {
     }
 
     private void add() {
-        ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
-        ImageIcon image2 = new ImageIcon("E:/UMS/image/AIUB2.jpg");
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
+        ImageIcon image2 = new ImageIcon("../image/AIUB2.jpg");
 		
         Font titleFont = new Font("Arial", Font.BOLD, 22);
         Font buttonFont = new Font("Arial", Font.BOLD, 16);
@@ -206,7 +240,7 @@ class Login extends JFrame {
     boolean isPasswordVisible = false;
 
     Login() {
-        ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
         this.setIconImage(image.getImage());
         this.setTitle("Login");
         this.setSize(600, 400);
@@ -247,7 +281,7 @@ class Login extends JFrame {
         passwordField.setBackground(new Color(250, 250, 255));
         passwordField.setForeground(new Color(50, 50, 50));
 
-        showButton = new JButton(new ImageIcon("E:/UMS/image/lock.png"));
+        showButton = new JButton(new ImageIcon("../image/lock.png"));
         showButton.setBounds(410, 150, 30, 30);
         showButton.setFocusPainted(false);
         showButton.addActionListener(new ActionListener() {
@@ -256,10 +290,10 @@ class Login extends JFrame {
                 isPasswordVisible = !isPasswordVisible;
                 if (isPasswordVisible) {
                     passwordField.setEchoChar((char) 0);
-                    showButton.setIcon(new ImageIcon("E:/UMS/image/unlock.png"));
+                    showButton.setIcon(new ImageIcon("../image/unlock.png"));
                 } else {
                     passwordField.setEchoChar('*');
-                    showButton.setIcon(new ImageIcon("E:/UMS/image/lock.png"));
+                    showButton.setIcon(new ImageIcon("../image/lock.png"));
                 }
             }
         });
@@ -299,10 +333,13 @@ class Login extends JFrame {
 		String userRole = (String) userRoleComboBox.getSelectedItem();
 		if (userRole.matches("Admin")) {
 			new Admin();
+			this.dispose();
 		} else if (userRole.matches("Faculty")) {
-			new Faculty(idField.getText()); // Pass faculty ID
+			new Faculty(idField.getText());
+			this.dispose();			
 		} else if (userRole.matches("Student")) {
-			new Student(idField.getText()); // Pass student ID
+			new Student(idField.getText());
+			this.dispose();
 		}
 	}
 
@@ -352,10 +389,10 @@ class Login extends JFrame {
 
 class Admin extends JFrame implements ActionListener {
 
-    JButton manageDepartmentButton, addAdminButton, addFacultyButton, manageCourseButton, addStudentButton, studentListButton, backButton;
+    JButton manageDepartmentButton, addAdminButton, addFacultyButton, manageCourseButton, addStudentButton, studentListButton, backButton ;
 
     Admin() {
-        ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
         this.setIconImage(image.getImage());
         this.setTitle("Admin Dashboard");
         this.setSize(800, 600);
@@ -368,12 +405,12 @@ class Admin extends JFrame implements ActionListener {
 
         JLabel dashBoard = createLabel("Admin Dashboard", 300, 30);
 
-        ImageIcon manageDepartmentIcon = new ImageIcon("E:/UMS/image/departmnent.png");
-        ImageIcon addAdminIcon = new ImageIcon("E:/UMS/image/add_Admin.png");
-        ImageIcon addFacultyIcon = new ImageIcon("E:/UMS/image/add_faculty.png");
-        ImageIcon manageCourseIcon = new ImageIcon("E:/UMS/image/manage_course.png");
-        ImageIcon addStudentIcon = new ImageIcon("E:/UMS/image/add_student.png");
-        ImageIcon studentListIcon = new ImageIcon("E:/UMS/image/student_list.png");
+        ImageIcon manageDepartmentIcon = new ImageIcon("../image/departmnent.png");
+        ImageIcon addAdminIcon = new ImageIcon("../image/add_Admin.png");
+        ImageIcon addFacultyIcon = new ImageIcon("../image/add_faculty.png");
+        ImageIcon manageCourseIcon = new ImageIcon("../image/manage_course.png");
+        ImageIcon addStudentIcon = new ImageIcon("../image/add_student.png");
+        ImageIcon studentListIcon = new ImageIcon("../image/student_list.png");
 
         manageDepartmentButton = createButton(manageDepartmentIcon, 100, 100);
         JLabel manageDepartment = createLabel("Manage Department", 50, 210);
@@ -398,7 +435,7 @@ class Admin extends JFrame implements ActionListener {
         backButton.setForeground(Color.WHITE);
         backButton.setFont(new Font("Arial", Font.BOLD, 14));
         backButton.setFocusPainted(false);
-        backButton.setBounds(550, 510, 200, 30);
+        backButton.setBounds(550, 460, 200, 30);
         backButton.addActionListener(this);
 		this.add(backButton);
 		
@@ -450,7 +487,7 @@ class Admin extends JFrame implements ActionListener {
         } else if (e.getSource() == backButton) {
             new Login();
 			this.dispose();
-        }
+        } 
     }
 }
 
@@ -461,10 +498,11 @@ class ManageDepartment extends JFrame implements ActionListener {
     private JButton backButton;
 
     public ManageDepartment() {
-        ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
         this.setIconImage(image.getImage());
         this.setTitle("Manage Department");
         this.setLayout(null);
+		this.setLocationRelativeTo(null);
         this.setSize(500, 360);
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.getContentPane().setBackground(new Color(240, 248, 255)); 
@@ -589,58 +627,63 @@ class AddAdmin extends JFrame {
 
     public AddAdmin() {
         this.setTitle("Add Admin");
-        this.setSize(400, 300);
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+        this.setSize(450, 350);
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(null);
         this.setLocationRelativeTo(null);
-        
-        JLabel idLabel = new JLabel("ID:");
-        idLabel.setBounds(50, 50, 100, 30);
+        this.getContentPane().setBackground(new Color(240, 248, 255));
+
+        JLabel titleLabel = new JLabel("Add New Admin");
+        titleLabel.setBounds(140, 10, 200, 30);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(70, 70, 150));
+        this.add(titleLabel);
+
+        JLabel idLabel = new JLabel("Admin ID:");
+        idLabel.setBounds(50, 60, 100, 30);
         this.add(idLabel);
 
         idField = new JTextField();
-        idField.setBounds(150, 50, 200, 30);
+        idField.setBounds(150, 60, 200, 30);
         this.add(idField);
 
         JLabel passwordLabel = new JLabel("Password:");
-        passwordLabel.setBounds(50, 100, 100, 30);
+        passwordLabel.setBounds(50, 110, 100, 30);
         this.add(passwordLabel);
 
         passwordField = new JPasswordField();
-        passwordField.setBounds(150, 100, 200, 30);
+        passwordField.setBounds(150, 110, 200, 30);
         this.add(passwordField);
 
         JButton saveButton = new JButton("Save");
-        saveButton.setBounds(150, 150, 100, 30);
+        button(saveButton, 150, 160 , 100, 150, 250);
+        saveButton.addActionListener(e -> addAdmin());
         this.add(saveButton);
-        
+
+        JButton viewAdminsButton = new JButton("View Admins");
+        button(viewAdminsButton, 150, 210 ,100, 150, 250 );
+        viewAdminsButton.addActionListener(e -> new ViewAdmins());
+        this.add(viewAdminsButton);
+
         JButton backButton = new JButton("Back");
-        backButton.setBackground(new Color(100, 150, 250));
-        backButton.setForeground(Color.WHITE);
-        backButton.setFont(new Font("Arial", Font.BOLD, 14));
-        backButton.setFocusPainted(false);
-        backButton.setBounds(150, 200, 150, 30);
+        button(backButton, 150, 260, 100, 150, 250);
         backButton.addActionListener(e -> {
             new Admin();
             this.dispose();
         });
         this.add(backButton);
 
-        saveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String id = idField.getText();
-                String password = new String(passwordField.getPassword());
-
-                if (id.isEmpty() || password.isEmpty()) {
-                    JOptionPane.showMessageDialog(null, "Both fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    addAdmin();
-                }
-            }
-        });
-
         this.setVisible(true);
+    }
+
+    private void button(JButton button, int x, int y , int a, int b ,int c) {
+        button.setBounds(x, y, 200, 30);
+        button.setBackground(new Color(a, b, c));
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setFocusPainted(false);
     }
 
     private void addAdmin() {
@@ -649,16 +692,85 @@ class AddAdmin extends JFrame {
         String userRole = "Admin";
 
         if (id.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill all fields.");
+            JOptionPane.showMessageDialog(this, "Please fill all fields.", "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             try {
                 User.saveUser(userRole, id, password);
-                JOptionPane.showMessageDialog(this, "Account created successfully!");
+                JOptionPane.showMessageDialog(this, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 idField.setText("");
                 passwordField.setText("");
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Error saving to the database.");
+                JOptionPane.showMessageDialog(this, "Error saving to the database.", "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+}
+
+class ViewAdmins extends JFrame {
+    private DefaultListModel<String> adminListModel;
+    private JList<String> adminList;
+
+    public ViewAdmins() {
+        this.setTitle("Admin Accounts");
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+        this.setSize(500, 400);
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setLayout(null);
+        this.setLocationRelativeTo(null);
+        this.getContentPane().setBackground(new Color(240, 248, 255));
+
+        JLabel titleLabel = new JLabel("Admin Accounts", JLabel.CENTER);
+        titleLabel.setBounds(100, 10, 300, 30);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(70, 70, 150));
+        this.add(titleLabel);
+
+        adminListModel = new DefaultListModel<>();
+        adminList = new JList<>(adminListModel);
+        JScrollPane scrollPane = new JScrollPane(adminList);
+        scrollPane.setBounds(50, 60, 400, 200);
+        this.add(scrollPane);
+
+        JButton backButton = new JButton("Back");
+        backButton.setBounds(150, 280, 200, 30);
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.addActionListener(e -> this.dispose());
+        this.add(backButton);
+
+        loadAdminAccounts();
+        this.setVisible(true);
+    }
+
+    private void loadAdminAccounts() {
+        File file = new File("user.txt");
+
+        if (!file.exists()) {
+            JOptionPane.showMessageDialog(this, "Error: users.txt file not found.", "File Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            boolean foundAdmins = false;
+
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+
+                if (data.length == 3 && "Admin".equalsIgnoreCase(data[0])) {
+                    adminListModel.addElement("ID: " + data[1]);
+                    foundAdmins = true;
+                }
+            }
+
+            if (!foundAdmins) {
+                adminListModel.addElement("No Admin accounts found.");
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error loading admin accounts: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
@@ -670,12 +782,14 @@ class AddFaculty extends JFrame implements ActionListener {
     private JRadioButton maleRB, femaleRB, otherRB;
     private ButtonGroup genderGroup;
     private JComboBox<String> nationalityComboBox, departmentComboBox;
-    private JButton submitButton, resetButton, editButton, deleteButton, searchButton;
+    private JButton submitButton, resetButton, editButton, deleteButton, searchButton , backButton;
     private JTable table;
     private DefaultTableModel tableModel;
 
     public AddFaculty() {
         this.setTitle("Manage Faculty");
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
         this.setSize(1300, 850);
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(null);
@@ -784,7 +898,6 @@ class AddFaculty extends JFrame implements ActionListener {
         submitButton.addActionListener(this);
         inputPanel.add(submitButton);
         resetButton = new JButton("Reset");
-        resetButton.setBounds(140, 590, 100, 30);
         resetButton.addActionListener(this);
         inputPanel.add(resetButton);
 
@@ -795,7 +908,7 @@ class AddFaculty extends JFrame implements ActionListener {
         this.add(tablePanel);
 
         tableModel = new DefaultTableModel();
-        tableModel.setColumnIdentifiers(new String[]{"ID", "Password", "Full Name", "DOB", "Gender", "Nationality", "Phone", "Email", "Department", "Program 1", "CGPA 1", "Program 2", "CGPA 2", "Program 3", "CGPA 3"});
+        tableModel.setColumnIdentifiers(new String[]{"ID", "Password", "Full Name", "Gender", "Nationality", "DOB", "Phone", "Email", "Department", "Program 1", "CGPA 1", "Program 2", "CGPA 2", "Program 3", "CGPA 3"});
         table = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(table);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
@@ -820,6 +933,16 @@ class AddFaculty extends JFrame implements ActionListener {
 		searchButton = new JButton("Search by ID");
         searchButton.addActionListener(this);
         buttonPanel.add(searchButton);
+		
+		backButton = new JButton("Back");
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.setBounds(170, 250, 200, 30);
+        backButton.addActionListener(this);
+		buttonPanel.add(backButton);
+		backButton.addActionListener(e -> { new Admin(); this.dispose(); });
 		
 		readFile();
 
@@ -903,16 +1026,13 @@ class AddFaculty extends JFrame implements ActionListener {
 
 
     private void update(int selectedRow) {
-        String id = (String) tableModel.getValueAt(selectedRow, 0);
-        String updatedDetails = JOptionPane.showInputDialog(this, "Update details for ID: " + id, tableModel.getDataVector().elementAt(selectedRow));
-        if (updatedDetails != null) {
-            String[] fields = updatedDetails.split(",");
-            for (int i = 0; i < fields.length; i++) {
-                tableModel.setValueAt(fields[i], selectedRow, i);
-            }
-            updateFile();
-        }
-    }
+		if (selectedRow == -1) {
+			JOptionPane.showMessageDialog(this, "Please select a row to edit.");
+			return;
+		}
+		new EditFaculty(tableModel, selectedRow);
+	}
+
 
     private void delete(int selectedRow) {
         String id = (String) tableModel.getValueAt(selectedRow, 0);
@@ -952,17 +1072,130 @@ class AddFaculty extends JFrame implements ActionListener {
     }
 }
 
+class EditFaculty extends JFrame implements ActionListener {
+    private JTextField idTF, passwordTF, fullNameTF, dobTF, phoneTF, emailTF;
+    private JRadioButton maleRB, femaleRB, otherRB;
+    private JComboBox<String> nationalityComboBox, departmentComboBox;
+    private JButton saveButton, cancelButton;
+    private int rowIndex;
+    private DefaultTableModel tableModel;
+
+    public EditFaculty(DefaultTableModel model, int row) {
+        this.rowIndex = row;
+        this.tableModel = model;
+
+        setTitle("Edit Faculty");
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+        setSize(500, 600);
+		this.setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        JPanel formPanel = new JPanel(new GridLayout(10, 2, 10, 10));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        idTF = new JTextField(model.getValueAt(row, 0).toString());
+        passwordTF = new JTextField(model.getValueAt(row, 1).toString());
+        fullNameTF = new JTextField(model.getValueAt(row, 2).toString());
+        dobTF = new JTextField(model.getValueAt(row, 5).toString());
+        phoneTF = new JTextField(model.getValueAt(row, 6).toString());
+        emailTF = new JTextField(model.getValueAt(row, 7).toString());
+
+        maleRB = new JRadioButton("Male");
+        femaleRB = new JRadioButton("Female");
+        otherRB = new JRadioButton("Other");
+        ButtonGroup genderGroup = new ButtonGroup();
+        genderGroup.add(maleRB);
+        genderGroup.add(femaleRB);
+        genderGroup.add(otherRB);
+        
+        String gender = model.getValueAt(row, 3).toString();
+        if (gender.equals("Male")) maleRB.setSelected(true);
+        else if (gender.equals("Female")) femaleRB.setSelected(true);
+        else otherRB.setSelected(true);
+
+        nationalityComboBox = new JComboBox<>(new String[]{"Bangladeshi", "Foreign"});
+        nationalityComboBox.setSelectedItem(model.getValueAt(row, 4).toString());
+
+        departmentComboBox = new JComboBox<>(Methods.readFile("departments.txt"));
+        departmentComboBox.setSelectedItem(model.getValueAt(row, 8).toString());
+
+        formPanel.add(new JLabel("ID:"));
+        formPanel.add(idTF);
+        formPanel.add(new JLabel("Password:"));
+        formPanel.add(passwordTF);
+        formPanel.add(new JLabel("Full Name:"));
+        formPanel.add(fullNameTF);
+        formPanel.add(new JLabel("Date of Birth:"));
+        formPanel.add(dobTF);
+        formPanel.add(new JLabel("Gender:"));
+
+        JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        genderPanel.add(maleRB);
+        genderPanel.add(femaleRB);
+        genderPanel.add(otherRB);
+        formPanel.add(genderPanel);
+
+        formPanel.add(new JLabel("Nationality:"));
+        formPanel.add(nationalityComboBox);
+        formPanel.add(new JLabel("Department:"));
+        formPanel.add(departmentComboBox);
+        formPanel.add(new JLabel("Phone:"));
+        formPanel.add(phoneTF);
+        formPanel.add(new JLabel("Email:"));
+        formPanel.add(emailTF);
+
+        JPanel buttonPanel = new JPanel();
+        saveButton = new JButton("Save");
+        cancelButton = new JButton("Cancel");
+        saveButton.addActionListener(this);
+        cancelButton.addActionListener(this);
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+
+        add(formPanel, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == saveButton) {
+            tableModel.setValueAt(idTF.getText(), rowIndex, 0);
+            tableModel.setValueAt(passwordTF.getText(), rowIndex, 1);
+            tableModel.setValueAt(fullNameTF.getText(), rowIndex, 2);
+            tableModel.setValueAt(dobTF.getText(), rowIndex, 5);
+            tableModel.setValueAt(maleRB.isSelected() ? "Male" : femaleRB.isSelected() ? "Female" : "Other", rowIndex, 3);
+            tableModel.setValueAt(nationalityComboBox.getSelectedItem(), rowIndex, 4);
+            tableModel.setValueAt(departmentComboBox.getSelectedItem(), rowIndex, 8);
+            tableModel.setValueAt(phoneTF.getText(), rowIndex, 6);
+            tableModel.setValueAt(emailTF.getText(), rowIndex, 7);
+
+            JOptionPane.showMessageDialog(this, "Faculty details updated!");
+            dispose();
+        } else if (e.getSource() == cancelButton) {
+            dispose();
+        }
+    }
+}
+
 class ManageCourse extends JFrame implements ActionListener {
     private JComboBox<String> departmentComboBox, facultyComboBox, creditsComboBox;
     private JTextField courseNameField, sectionField;
     private JTable courseTable;
     private DefaultTableModel tableModel;
-	private JButton backButton;
-		
+    private JButton addButton, deleteButton, backButton , newSemesterButton, statusButton ;
+	public boolean status ;
+
 
     public ManageCourse() {
         this.setTitle("Manage Courses");
         this.setSize(1000, 900);
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+        this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(null);
 
@@ -986,7 +1219,7 @@ class ManageCourse extends JFrame implements ActionListener {
         creditsLabel.setBounds(30, 110, 100, 25);
         this.add(creditsLabel);
 
-        creditsComboBox = new JComboBox<>(new String[]{"1", "2", "3", "4", "5"});
+        creditsComboBox = new JComboBox<>(new String[]{"1", "2", "3"});
         creditsComboBox.setBounds(150, 110, 200, 25);
         this.add(creditsComboBox);
 
@@ -1006,23 +1239,75 @@ class ManageCourse extends JFrame implements ActionListener {
         facultyComboBox.setBounds(150, 190, 200, 25);
         this.add(facultyComboBox);
 
-        JButton addButton = new JButton("Add Course");
-        addButton.setBounds(400, 70, 150, 30);
+        addButton = new JButton("Add Course");
+        addButton.setBounds(400, 80, 150, 30);
+		addButton.setFont(new Font("Arial", Font.BOLD, 14));
+		addButton.setBackground(new Color(100, 150, 250));
+		addButton.setForeground(Color.WHITE);
+		addButton.setFocusPainted(false);
         this.add(addButton);
+        addButton.addActionListener(this);
 
-        JButton deleteButton = new JButton("Delete Course");
-        deleteButton.setBounds(400, 110, 150, 30);
+        deleteButton = new JButton("Delete Course");
+        deleteButton.setBounds(400, 130, 150, 30);
+		deleteButton.setFont(new Font("Arial", Font.BOLD, 14));
+		deleteButton.setBackground(new Color(100, 150, 250));
+		deleteButton.setForeground(Color.WHITE);
+		deleteButton.setFocusPainted(false);
         this.add(deleteButton);
+        deleteButton.addActionListener(this);
+
+        JLabel semesterLabel;
+        try {
+            semesterLabel = new JLabel("Semester : "+readSemester());
+        } catch (IOException e) {
+            semesterLabel = new JLabel("Error reading semester");
+        }
+		semesterLabel.setBounds(450, 10, 300, 50);
+		semesterLabel.setFont(new Font("Arial", Font.BOLD, 20));
+		semesterLabel.setForeground(new Color(70, 70, 150));
+		this.add(semesterLabel);
 		
-		backButton = new JButton("Back");
+		newSemesterButton = new JButton("New Semester");
+		newSemesterButton.setBounds(400, 180, 150, 30);
+		newSemesterButton.setFont(new Font("Arial", Font.BOLD, 14));
+		newSemesterButton.setBackground(new Color(100, 150, 250));
+		newSemesterButton.setForeground(Color.WHITE);
+		newSemesterButton.setFocusPainted(false);
+        newSemesterButton.addActionListener(this);
+		this.add(newSemesterButton);
+		
+		JLabel enableCourseLabel = new JLabel("Add Course for Students:");
+		enableCourseLabel.setFont(new Font("Arial", Font.BOLD, 20));
+		enableCourseLabel.setForeground(new Color(70, 70, 150));
+		enableCourseLabel.setBounds(600, 120, 250, 30);
+		this.add(enableCourseLabel);
+
+		JButton statusButton = new JButton("Enable");
+		statusButton.setBounds(600, 160, 100, 30);
+		statusButton.setFont(new Font("Arial", Font.BOLD, 14));
+		statusButton.setBackground(new Color(100, 150, 250));
+		statusButton.setForeground(Color.WHITE);
+		statusButton.setFocusPainted(false);
+        statusButton.addActionListener(this);
+		this.add(statusButton);
+
+		status = Methods.readStatus();
+		statusButton.addActionListener(e -> {
+            status = !status;
+            statusButton.setText(status ? "Disable" : "Enable");
+            saveStatus(status);
+        });
+
+
+        backButton = new JButton("Back");
         backButton.setBackground(new Color(100, 150, 250));
         backButton.setForeground(Color.WHITE);
         backButton.setFont(new Font("Arial", Font.BOLD, 14));
         backButton.setFocusPainted(false);
-        backButton.setBounds(650, 70, 150, 30);
-        backButton.addActionListener(this);
-		this.add(backButton);
-		backButton.addActionListener(e -> { new Admin(); this.dispose(); });
+        backButton.setBounds(800, 810, 150, 30);
+        this.add(backButton);
+        backButton.addActionListener(e -> { new Admin(); this.dispose(); });
 
         tableModel = new DefaultTableModel(new String[]{"Department", "Course Name", "Credits", "Section", "Faculty ID", "Faculty Name"}, 0);
         courseTable = new JTable(tableModel);
@@ -1032,11 +1317,27 @@ class ManageCourse extends JFrame implements ActionListener {
 
         loadCoursesIntoTable();
 
-        addButton.addActionListener(e -> addCourse());
-        deleteButton.addActionListener(e -> deleteCourse());
 
         this.getContentPane().setBackground(new Color(230, 240, 255));
         this.setVisible(true);
+    }
+	
+	private void saveStatus(boolean status) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("status.txt"))) {
+            writer.write(Boolean.toString(status));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String readSemester() throws IOException {
+        String semesterName;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader("current_semester.txt"))) {
+            semesterName = reader.readLine();
+        }
+
+        return semesterName;
     }
 
     private void loadCoursesIntoTable() {
@@ -1053,6 +1354,13 @@ class ManageCourse extends JFrame implements ActionListener {
         int credits = Integer.parseInt((String) creditsComboBox.getSelectedItem());
         String section = sectionField.getText().trim();
         String selectedFaculty = (String) facultyComboBox.getSelectedItem();
+		String semester = " ";
+		
+		try {
+			semester = readSemester();
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, "Error reading semester: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
 
         String[] facultyDetails = selectedFaculty.split(",");
         String facultyId = facultyDetails[0].trim();
@@ -1060,7 +1368,7 @@ class ManageCourse extends JFrame implements ActionListener {
 
         if (!courseName.isEmpty() && !section.isEmpty()) {
             try {
-                Courses.saveCourse(department, courseName, section, facultyId, facultyName, credits);
+                Courses.saveCourse(department, courseName, section, facultyId, facultyName, credits,semester);
                 tableModel.addRow(new Object[]{department, courseName, credits, section, facultyId, facultyName});
                 JOptionPane.showMessageDialog(this, "Course added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 courseNameField.setText("");
@@ -1099,18 +1407,69 @@ class ManageCourse extends JFrame implements ActionListener {
             e.printStackTrace();
         }
     }
-	
+
 	@Override
-    public void actionPerformed(ActionEvent e) {
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == newSemesterButton) {
+			new NewSemesterFrame();
+		} else if (e.getSource() == addButton) {
+			addCourse();
+		} else if (e.getSource() == deleteButton) {
+			deleteCourse();
+		}
+	}
+}
+
+class NewSemesterFrame extends JFrame {
+	
+    private JTextField semesterTextField;
+
+    public NewSemesterFrame() {
+        this.setTitle("New Semester");
+        this.setSize(300, 150);
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setLocationRelativeTo(null);
+        this.setLayout(new FlowLayout());
+		this.setVisible(true);
+
+        JLabel semesterLabel = new JLabel("Enter Semester Name:");
+        semesterTextField = new JTextField(20);
+        JButton saveButton = new JButton("Save");
+
+        this.add(semesterLabel);
+        this.add(semesterTextField);
+        this.add(saveButton);
+
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String semesterName = semesterTextField.getText().trim();
+                if (!semesterName.isEmpty()) {
+                    try {
+                        Semester.saveSemester(semesterName);
+                        CurrentSemester.saveSemester(semesterName);
+                        JOptionPane.showMessageDialog(NewSemesterFrame.this, "Semester saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(NewSemesterFrame.this, "Error saving semester.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(NewSemesterFrame.this, "Please enter a valid semester name.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
     }
 }
+
 class AddStudent extends JFrame {
     JTextField idField, passwordField, studentNameField, fathersNameField, mothersNameField, dobField, emailField, phoneField;
     JComboBox<String> levelComboBox, departmentComboBox, nationalityComboBox;
-    JButton submitButton;
+    JButton submitButton , backButton;
 
     AddStudent() {
-        ImageIcon image = new ImageIcon("E:/UMS/image/AIUB.png");
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
         this.setIconImage(image.getImage());
         this.setTitle("Create Account...");
         this.setSize(600, 900);
@@ -1190,6 +1549,17 @@ class AddStudent extends JFrame {
         submitButton.setFont(new Font("Arial", Font.BOLD, 14));
         submitButton.setFocusPainted(false);
         submitButton.addActionListener(e -> addStudent());
+		
+		backButton = new JButton("Back");
+        backButton.setBackground(new Color(100, 150, 250));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setFocusPainted(false);
+        backButton.setBounds(200, 700, 200, 30);
+        backButton.addActionListener(e -> {
+            new Admin();
+            this.dispose();
+        });
         
         this.add(titleLabel);
         this.add(idLabel);
@@ -1215,6 +1585,7 @@ class AddStudent extends JFrame {
         this.add(phoneLabel);
         this.add(phoneField);
         this.add(submitButton);
+		this.add (backButton);
         
     }
 
@@ -1251,9 +1622,11 @@ class StudentList extends JFrame implements ActionListener {
     private DefaultTableModel tableModel;
     private JTextField searchField;
     private JComboBox<String> departmentFilter;
-    private JButton updateButton, removeButton, searchButton, filterButton, refreshButton;
+    private JButton updateButton, removeButton, searchButton, filterButton, refreshButton , backButton;
 
     public StudentList() {
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
         setTitle("Student Management System");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -1277,9 +1650,10 @@ class StudentList extends JFrame implements ActionListener {
         add(searchField);
 
         searchButton = new JButton("Search");
-        searchButton.setBounds(280, 320, 100, 30);
-        searchButton.addActionListener(this);
-        add(searchButton);
+		Button(searchButton, new Color(70, 130, 180), Color.WHITE);
+		searchButton.setBounds(280, 320, 100, 30);
+		searchButton.addActionListener(this);
+		add(searchButton);
 
         JLabel filterLabel = new JLabel("Filter by Department:");
         filterLabel.setBounds(10, 360, 150, 30);
@@ -1290,29 +1664,49 @@ class StudentList extends JFrame implements ActionListener {
         departmentFilter.setBounds(160, 360, 150, 30);
         add(departmentFilter);
 
-        filterButton = new JButton("Filter");
-        filterButton.setBounds(320, 360, 100, 30);
-        filterButton.addActionListener(this);
-        add(filterButton);
+		filterButton = new JButton("Filter");
+		Button(filterButton, new Color(34, 139, 34), Color.WHITE);
+		filterButton.setBounds(320, 360, 100, 30);
+		filterButton.addActionListener(this);
+		add(filterButton);
 
-        updateButton = new JButton("Update");
-        updateButton.setBounds(10, 400, 100, 30);
-        updateButton.addActionListener(this);
-        add(updateButton);
+		updateButton = new JButton("Update");
+		Button(updateButton, new Color(255, 165, 0), Color.BLACK);
+		updateButton.setBounds(10, 400, 100, 30);
+		updateButton.addActionListener(this);
+		add(updateButton);
 
-        removeButton = new JButton("Remove");
-        removeButton.setBounds(120, 400, 100, 30);
-        removeButton.addActionListener(this);
-        add(removeButton);
+		removeButton = new JButton("Remove");
+		Button(removeButton, new Color(220, 20, 60), Color.WHITE);
+		removeButton.setBounds(120, 400, 100, 30);
+		removeButton.addActionListener(this);
+		add(removeButton);
 
-        refreshButton = new JButton("Refresh");
-        refreshButton.setBounds(230, 400, 100, 30);
-        refreshButton.addActionListener(this);
-        add(refreshButton);
+		refreshButton = new JButton("Refresh");
+		Button(refreshButton, new Color(0, 191, 255), Color.BLACK);
+		refreshButton.setBounds(230, 400, 100, 30);
+		refreshButton.addActionListener(this);
+		add(refreshButton);
+		
+		backButton = new JButton("Back");
+		Button(backButton, new Color(100, 150, 250), Color.WHITE);
+		backButton.setBounds(600, 500, 100, 30);
+		backButton.addActionListener(e -> { new Admin(); this.dispose(); });
+		add(backButton);
 
         loadStudents();
         setVisible(true);
     }
+	
+	private void Button(JButton button, Color bgColor, Color fgColor) {
+		button.setBackground(bgColor);
+		button.setForeground(fgColor);
+		button.setFont(new Font("Arial", Font.BOLD, 14));
+		button.setFocusPainted(false);
+		button.setBorderPainted(false);
+		button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+	}
+
 
     private void loadStudents() {
         tableModel.setRowCount(0);
@@ -1380,53 +1774,6 @@ class StudentList extends JFrame implements ActionListener {
         new File("Students_temp.txt").renameTo(new File("Students.txt"));
     }
 
-    private void updateStudent() {
-        int selectedRow = studentTable.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(null, "Please select a student to update.");
-            return;
-        }
-
-        String id = tableModel.getValueAt(selectedRow, 0).toString();
-        String studentName = tableModel.getValueAt(selectedRow, 1).toString();
-        String fathersName = tableModel.getValueAt(selectedRow, 2).toString();
-        String mothersName = tableModel.getValueAt(selectedRow, 3).toString();
-        String nationality = tableModel.getValueAt(selectedRow, 4).toString();
-        String dob = tableModel.getValueAt(selectedRow, 5).toString();
-        String level = tableModel.getValueAt(selectedRow, 6).toString();
-        String department = tableModel.getValueAt(selectedRow, 7).toString();
-        String email = tableModel.getValueAt(selectedRow, 8).toString();
-        String phoneNumber = tableModel.getValueAt(selectedRow, 9).toString();
-
-        String updatedStudentData = id + "," + studentName + "," + fathersName + "," + mothersName + "," + nationality + "," + dob + "," + level + "," + department + "," + email + "," + phoneNumber;
-
-        try {
-            List<String> lines = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new FileReader("Students.txt"))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] data = line.split(",");
-                    if (data[0].equals(id)) {
-                        lines.add(updatedStudentData);
-                    } else {
-                        lines.add(line);
-                    }
-                }
-            }
-
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter("Students.txt", false))) {
-                for (String line : lines) {
-                    writer.write(line);
-                    writer.newLine();
-                }
-            }
-
-            JOptionPane.showMessageDialog(null, "Student information updated successfully!");
-
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error updating student information: " + e.getMessage());
-        }
-    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -1437,9 +1784,184 @@ class StudentList extends JFrame implements ActionListener {
         } else if (e.getSource() == removeButton) {
             removeStudent();
         } else if (e.getSource() == updateButton) {
-            updateStudent();
+           new UpdateStudent();
         } else if (e.getSource() == refreshButton) {
-            loadStudents();
+           new StudentList();
+		   this.dispose ();
+        }
+    }
+}
+
+class UpdateStudent extends JFrame {
+    private JTextField idField, nameField, fatherField, motherField, nationalityField, dobField, levelField, departmentField, emailField, phoneField;
+    private JButton searchButton, updateButton, cancelButton;
+
+    public UpdateStudent() {
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+        setTitle("Update Student");
+        setSize(400, 500);
+        setLayout(null);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        JLabel idLabel = new JLabel("Enter ID:");
+        idLabel.setBounds(20, 20, 100, 30);
+        add(idLabel);
+
+        idField = new JTextField();
+        idField.setBounds(130, 20, 200, 30);
+        add(idField);
+
+        searchButton = new JButton("Search");
+        searchButton.setBounds(130, 60, 100, 30);
+        searchButton.addActionListener(e -> searchStudent());
+        add(searchButton);
+
+        JLabel nameLabel = new JLabel("Name:");
+        nameLabel.setBounds(20, 100, 100, 30);
+        add(nameLabel);
+
+        nameField = new JTextField();
+        nameField.setBounds(130, 100, 200, 30);
+        add(nameField);
+
+        JLabel fatherLabel = new JLabel("Father:");
+        fatherLabel.setBounds(20, 140, 100, 30);
+        add(fatherLabel);
+
+        fatherField = new JTextField();
+        fatherField.setBounds(130, 140, 200, 30);
+        add(fatherField);
+
+        JLabel motherLabel = new JLabel("Mother:");
+        motherLabel.setBounds(20, 180, 100, 30);
+        add(motherLabel);
+
+        motherField = new JTextField();
+        motherField.setBounds(130, 180, 200, 30);
+        add(motherField);
+
+        JLabel nationalityLabel = new JLabel("Nationality:");
+        nationalityLabel.setBounds(20, 220, 100, 30);
+        add(nationalityLabel);
+
+        nationalityField = new JTextField();
+        nationalityField.setBounds(130, 220, 200, 30);
+        add(nationalityField);
+
+        JLabel dobLabel = new JLabel("DOB:");
+        dobLabel.setBounds(20, 260, 100, 30);
+        add(dobLabel);
+
+        dobField = new JTextField();
+        dobField.setBounds(130, 260, 200, 30);
+        add(dobField);
+
+        JLabel levelLabel = new JLabel("Level:");
+        levelLabel.setBounds(20, 300, 100, 30);
+        add(levelLabel);
+
+        levelField = new JTextField();
+        levelField.setBounds(130, 300, 200, 30);
+        add(levelField);
+
+        JLabel departmentLabel = new JLabel("Department:");
+        departmentLabel.setBounds(20, 340, 100, 30);
+        add(departmentLabel);
+
+        departmentField = new JTextField();
+        departmentField.setBounds(130, 340, 200, 30);
+        add(departmentField);
+
+        JLabel emailLabel = new JLabel("Email:");
+        emailLabel.setBounds(20, 380, 100, 30);
+        add(emailLabel);
+
+        emailField = new JTextField();
+        emailField.setBounds(130, 380, 200, 30);
+        add(emailField);
+
+        JLabel phoneLabel = new JLabel("Phone:");
+        phoneLabel.setBounds(20, 420, 100, 30);
+        add(phoneLabel);
+
+        phoneField = new JTextField();
+        phoneField.setBounds(130, 420, 200, 30);
+        add(phoneField);
+
+        updateButton = new JButton("Update");
+        updateButton.setBounds(60, 460, 100, 30);
+        updateButton.addActionListener(e -> updateStudent());
+        add(updateButton);
+
+        cancelButton = new JButton("Cancel");
+        cancelButton.setBounds(200, 460, 100, 30);
+        cancelButton.addActionListener(e -> dispose());
+        add(cancelButton);
+
+        setVisible(true);
+    }
+
+    private void searchStudent() {
+        String id = idField.getText();
+        try (BufferedReader reader = new BufferedReader(new FileReader("Students.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data[0].equals(id)) {
+                    nameField.setText(data[1]);
+                    fatherField.setText(data[2]);
+                    motherField.setText(data[3]);
+                    nationalityField.setText(data[4]);
+                    dobField.setText(data[5]);
+                    levelField.setText(data[6]);
+                    departmentField.setText(data[7]);
+                    emailField.setText(data[8]);
+                    phoneField.setText(data[9]);
+                    return;
+                }
+            }
+            JOptionPane.showMessageDialog(this, "Student not found.");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void updateStudent() {
+        String id = idField.getText();
+        List<String> students = new ArrayList<>();
+        boolean found = false;
+        try (BufferedReader reader = new BufferedReader(new FileReader("Students.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data[0].equals(id)) {
+                    String updatedData = id + "," + nameField.getText() + "," + fatherField.getText() + "," + motherField.getText() + "," +
+                            nationalityField.getText() + "," + dobField.getText() + "," + levelField.getText() + "," + departmentField.getText() + "," +
+                            emailField.getText() + "," + phoneField.getText();
+                    students.add(updatedData);
+                    found = true;
+                } else {
+                    students.add(line);
+                }
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        if (found) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("Students.txt"))) {
+                for (String student : students) {
+                    writer.write(student);
+                    writer.newLine();
+                }
+                JOptionPane.showMessageDialog(this, "Student details updated successfully.");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Student ID not found.");
         }
     }
 }
