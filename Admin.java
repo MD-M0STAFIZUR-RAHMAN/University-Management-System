@@ -9,7 +9,6 @@ import java.awt.event.ActionListener;
 import java.io.*;
 
 class Methods {
-	
 	public static String[] readFile(String fileName) {
         List<String> List = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
@@ -58,7 +57,21 @@ class User {
         }
         return false;
     }
+
+    public static boolean isIdExist(String id) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 2 && parts[1].equals(id)) { 
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
+
 
 class Students {
 
@@ -686,24 +699,29 @@ class AddAdmin extends JFrame {
         button.setFocusPainted(false);
     }
 
-    private void addAdmin() {
+    private void addAdmin() {  
         String id = idField.getText();
         String password = new String(passwordField.getPassword());
         String userRole = "Admin";
-
+    
         if (id.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill all fields.", "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             try {
-                User.saveUser(userRole, id, password);
-                JOptionPane.showMessageDialog(this, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                idField.setText("");
-                passwordField.setText("");
+                if (User.isIdExist(id)) {  
+                    JOptionPane.showMessageDialog(this, "ID already exists. Please use a different ID.", "Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    User.saveUser(userRole, id, password);
+                    JOptionPane.showMessageDialog(this, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    idField.setText("");
+                    passwordField.setText("");
+                }
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this, "Error saving to the database.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
+    
 }
 
 class ViewAdmins extends JFrame {
@@ -776,173 +794,199 @@ class ViewAdmins extends JFrame {
 }
 
 class AddFaculty extends JFrame implements ActionListener {
-    private JLabel idLabel, passwordLabel, fullNameLabel, dobLabel, genderLabel, nationalityLabel, phoneLabel, emailLabel, educationLabel, departmentLabel;
+     private JLabel idLabel, passwordLabel, fullNameLabel, dobLabel, genderLabel, nationalityLabel, departmentLabel, educationLabel, phoneLabel, emailLabel;
     private JTextField idTF, passwordTF, fullNameTF, dobTF, phoneTF, emailTF, searchTF;
-    private JTextField[] programTF, cgpaTF;
+    private JComboBox<String> nationalityComboBox, departmentComboBox;
     private JRadioButton maleRB, femaleRB, otherRB;
     private ButtonGroup genderGroup;
-    private JComboBox<String> nationalityComboBox, departmentComboBox;
-    private JButton submitButton, resetButton, editButton, deleteButton, searchButton , backButton;
+    private JTextField[] programTF, cgpaTF;
+    private JButton submitButton, resetButton, editButton, deleteButton, searchButton, backButton;
     private JTable table;
     private DefaultTableModel tableModel;
+    private JPanel inputPanel, tablePanel, buttonPanel;
 
     public AddFaculty() {
         this.setTitle("Manage Faculty");
 		ImageIcon image = new ImageIcon("../image/AIUB.png");
-        this.setIconImage(image.getImage());
-        this.setSize(1300, 850);
-        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.setLayout(null);
-        this.setLocationRelativeTo(null);
+		this.setIconImage(image.getImage());
+		this.setSize(1300, 850);
+		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		this.setLayout(null);
+		this.setLocationRelativeTo(null);
 		this.setVisible(true);
-
-        String[] departments = Methods.readFile("departments.txt");
-        departmentComboBox = new JComboBox<>(departments);
-
-        JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(null);
-        inputPanel.setBounds(10, 10, 450, 650);
-        inputPanel.setBorder(BorderFactory.createTitledBorder("Add Faculty Details"));
-        this.add(inputPanel);
-
-        idLabel = new JLabel("ID:");
-        idLabel.setBounds(20, 30, 100, 30);
-        inputPanel.add(idLabel);
-        idTF = new JTextField();
-        idTF.setBounds(150, 30, 200, 30);
-        inputPanel.add(idTF);
-
-        passwordLabel = new JLabel("Password:");
-        passwordLabel.setBounds(20, 70, 100, 30);
-        inputPanel.add(passwordLabel);
-        passwordTF = new JTextField();
-        passwordTF.setBounds(150, 70, 200, 30);
-        inputPanel.add(passwordTF);
-
-        fullNameLabel = new JLabel("Full Name:");
-        fullNameLabel.setBounds(20, 110, 100, 30);
-        inputPanel.add(fullNameLabel);
-        fullNameTF = new JTextField();
-        fullNameTF.setBounds(150, 110, 200, 30);
-        inputPanel.add(fullNameTF);
-
-        dobLabel = new JLabel("Date of Birth:");
-        dobLabel.setBounds(20, 150, 100, 30);
-        inputPanel.add(dobLabel);
-        dobTF = new JTextField();
-        dobTF.setBounds(150, 150, 200, 30);
-        inputPanel.add(dobTF);
-
-        genderLabel = new JLabel("Gender:");
-        genderLabel.setBounds(20, 190, 100, 30);
-        inputPanel.add(genderLabel);
-        maleRB = new JRadioButton("Male");
-        maleRB.setBounds(150, 190, 70, 30);
-        femaleRB = new JRadioButton("Female");
-        femaleRB.setBounds(230, 190, 80, 30);
-        otherRB = new JRadioButton("Other");
-        otherRB.setBounds(320, 190, 80, 30);
-        genderGroup = new ButtonGroup();
-        genderGroup.add(maleRB);
-        genderGroup.add(femaleRB);
-        genderGroup.add(otherRB);
-        inputPanel.add(maleRB);
-        inputPanel.add(femaleRB);
-        inputPanel.add(otherRB);
-
-        nationalityLabel = new JLabel("Nationality:");
-        nationalityLabel.setBounds(20, 230, 100, 30);
-        inputPanel.add(nationalityLabel);
-        nationalityComboBox = new JComboBox<>(new String[]{"Bangladeshi", "Foreign"});
-        nationalityComboBox.setBounds(150, 230, 200, 30);
-        inputPanel.add(nationalityComboBox);
-
-        departmentLabel = new JLabel("Department:");
-        departmentLabel.setBounds(20, 270, 100, 30);
-        inputPanel.add(departmentLabel);
-        departmentComboBox.setBounds(150, 270, 200, 30);
-        inputPanel.add(departmentComboBox);
-
-        educationLabel = new JLabel("Education Qualification:");
-        educationLabel.setBounds(20, 350, 200, 30);
-        inputPanel.add(educationLabel);
-        programTF = new JTextField[3];
-        cgpaTF = new JTextField[3];
-        for (int i = 0; i < 3; i++) {
+        getContentPane().setBackground(Color.WHITE);
+		
+		String[] departments = Methods.readFile("departments.txt");
+		departmentComboBox = new JComboBox<>(departments);
+		
+		inputPanel = new JPanel();
+		inputPanel.setLayout(null);
+		inputPanel.setBounds(10, 10, 450, 650);
+		inputPanel.setBorder(BorderFactory.createTitledBorder("Add Faculty Details"));
+		this.add(inputPanel);
+		
+		idLabel = new JLabel("ID:");
+		idLabel.setBounds(20, 30, 100, 30);
+		inputPanel.add(idLabel);
+		
+		idTF = new JTextField();
+		idTF.setBounds(150, 30, 200, 30);
+		inputPanel.add(idTF);
+		
+		passwordLabel = new JLabel("Password:");
+		passwordLabel.setBounds(20, 70, 100, 30);
+		inputPanel.add(passwordLabel);
+		
+		passwordTF = new JTextField();
+		passwordTF.setBounds(150, 70, 200, 30);
+		inputPanel.add(passwordTF);
+		
+		fullNameLabel = new JLabel("Full Name:");
+		fullNameLabel.setBounds(20, 110, 100, 30);
+		inputPanel.add(fullNameLabel);
+		
+		fullNameTF = new JTextField();
+		fullNameTF.setBounds(150, 110, 200, 30);
+		inputPanel.add(fullNameTF);
+		
+		dobLabel = new JLabel("Date of Birth:");
+		dobLabel.setBounds(20, 150, 100, 30);
+		inputPanel.add(dobLabel);
+		
+		dobTF = new JTextField();
+		dobTF.setBounds(150, 150, 200, 30);
+		inputPanel.add(dobTF);
+		
+		genderLabel = new JLabel("Gender:");
+		genderLabel.setBounds(20, 190, 100, 30);
+		inputPanel.add(genderLabel);
+		
+		maleRB = new JRadioButton("Male");
+		maleRB.setBounds(150, 190, 70, 30);
+		femaleRB = new JRadioButton("Female");
+		femaleRB.setBounds(230, 190, 80, 30);
+		otherRB = new JRadioButton("Other");
+		otherRB.setBounds(320, 190, 80, 30);
+		genderGroup = new ButtonGroup();
+		genderGroup.add(maleRB);
+		genderGroup.add(femaleRB);
+		genderGroup.add(otherRB);
+		
+		inputPanel.add(maleRB);
+		inputPanel.add(femaleRB);
+		inputPanel.add(otherRB);
+		
+		nationalityLabel = new JLabel("Nationality:");
+		nationalityLabel.setBounds(20, 230, 100, 30);
+		inputPanel.add(nationalityLabel);
+		
+		nationalityComboBox = new JComboBox<>(new String[]{"Bangladeshi", "Foreign"});
+		nationalityComboBox.setBounds(150, 230, 200, 30);
+		inputPanel.add(nationalityComboBox);
+		
+		departmentLabel = new JLabel("Department:");
+		departmentLabel.setBounds(20, 270, 100, 30);
+		inputPanel.add(departmentLabel);
+		
+		departmentComboBox.setBounds(150, 270, 200, 30);
+		inputPanel.add(departmentComboBox);
+		
+		educationLabel = new JLabel("Education Qualification:");
+		educationLabel.setBounds(20, 350, 200, 30);
+		inputPanel.add(educationLabel);
+		programTF = new JTextField[3];
+		cgpaTF = new JTextField[3];
+		for (int i = 0; i < 3; i++) {
 			programTF[i] = new JTextField();
 			programTF[i].setBounds(20, 390 + i * 40, 200, 30);
-			programTF[i].setText("");
 			inputPanel.add(programTF[i]);
 			cgpaTF[i] = new JTextField();
 			cgpaTF[i].setBounds(230, 390 + i * 40, 120, 30);
-			cgpaTF[i].setText("");
 			inputPanel.add(cgpaTF[i]);
 		}
-
-        phoneLabel = new JLabel("Phone Number:");
-        phoneTF = new JTextField();
+		
+		phoneLabel = new JLabel("Phone Number:");
+		phoneTF = new JTextField();
 		phoneLabel.setBounds(20, 510, 120, 30);
 		phoneTF.setBounds(150, 510, 200, 30);
 		inputPanel.add(phoneLabel);
 		inputPanel.add(phoneTF);
-
-        emailLabel = new JLabel("Email Address:");
-        emailTF = new JTextField();
+		
+		emailLabel = new JLabel("Email Address:");
+		emailTF = new JTextField();
 		emailLabel.setBounds(20, 550, 120, 30);
 		emailTF.setBounds(150, 550, 200, 30);
 		inputPanel.add(emailLabel);
 		inputPanel.add(emailTF);
-
-        submitButton = new JButton("Submit");
-        submitButton.setBounds(20, 590, 100, 30);
-        submitButton.addActionListener(this);
-        inputPanel.add(submitButton);
-        resetButton = new JButton("Reset");
-        resetButton.addActionListener(this);
-        inputPanel.add(resetButton);
-
-        JPanel tablePanel = new JPanel();
-        tablePanel.setLayout(new BorderLayout());
-        tablePanel.setBounds(470, 10, 800, 600);
-        tablePanel.setBorder(BorderFactory.createTitledBorder("Faculty List"));
-        this.add(tablePanel);
-
-        tableModel = new DefaultTableModel();
-        tableModel.setColumnIdentifiers(new String[]{"ID", "Password", "Full Name", "Gender", "Nationality", "DOB", "Phone", "Email", "Department", "Program 1", "CGPA 1", "Program 2", "CGPA 2", "Program 3", "CGPA 3"});
-        table = new JTable(tableModel);
-        JScrollPane scrollPane = new JScrollPane(table);
-        tablePanel.add(scrollPane, BorderLayout.CENTER);
 		
-		JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout());
-        buttonPanel.setBounds(470, 620, 800, 50);
-        buttonPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
-        this.add(buttonPanel);
+		submitButton = new JButton("Submit");
+		
+		submitButton.setBackground(new Color(100, 150, 250));
+		submitButton.setForeground(Color.WHITE);
+		submitButton.setFont(new Font("Arial", Font.BOLD, 14));
+		submitButton.setFocusPainted(false);
+		submitButton.setBounds(20, 590, 100, 30);
+		submitButton.addActionListener(this);
+		inputPanel.add(submitButton);
+		
+		resetButton = new JButton("Reset");
+		resetButton.setBackground(new Color(100, 150, 250));
+		resetButton.setForeground(Color.WHITE);
+		resetButton.setFont(new Font("Arial", Font.BOLD, 14));
+		resetButton.setFocusPainted(false);
+		resetButton.setBounds(150, 590, 100, 30);
+		resetButton.addActionListener(this);
+		inputPanel.add(resetButton);
+		
+		tablePanel = new JPanel();
+		tablePanel.setLayout(new BorderLayout());
+		tablePanel.setBounds(470, 10, 800, 600);
+		tablePanel.setBorder(BorderFactory.createTitledBorder("Faculty List"));
+		this.add(tablePanel);
+		tableModel = new DefaultTableModel();
+		tableModel.setColumnIdentifiers(new String[]{"ID", "Password", "Full Name", "Gender", "Nationality", "DOB", "Phone", "Email", "Department", "Program 1", "CGPA 1", "Program 2", "CGPA 2", "Program 3", "CGPA 3"});
+		table = new JTable(tableModel);
+		JScrollPane scrollPane = new JScrollPane(table);
+		tablePanel.add(scrollPane, BorderLayout.CENTER);
+		
+		buttonPanel = new JPanel();
+		buttonPanel.setLayout(new FlowLayout());
+		buttonPanel.setBounds(470, 620, 800, 50);
+		buttonPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
+		this.add(buttonPanel);
 		
 		editButton = new JButton("Edit");
-        editButton.addActionListener(this);
-        buttonPanel.add(editButton);
+		editButton.addActionListener(this);
+		buttonPanel.add(editButton);
 		
 		deleteButton = new JButton("Delete");
-        deleteButton.addActionListener(this);
-        buttonPanel.add(deleteButton);
+		deleteButton.setBackground(new Color(100, 150, 250));
+		deleteButton.setForeground(Color.WHITE);
+		deleteButton.setFont(new Font("Arial", Font.BOLD, 14));
+		deleteButton.setFocusPainted(false);
+		deleteButton.addActionListener(this);
+		buttonPanel.add(deleteButton);
 		
 		searchTF = new JTextField(15);
-        buttonPanel.add(searchTF);
+		buttonPanel.add(searchTF);
 		
 		searchButton = new JButton("Search by ID");
-        searchButton.addActionListener(this);
-        buttonPanel.add(searchButton);
+		searchButton.addActionListener(this);
+		searchButton.setBackground(new Color(100, 150, 250));
+		searchButton.setForeground(Color.WHITE);
+		searchButton.setFont(new Font("Arial", Font.BOLD, 14));
+		searchButton.setFocusPainted(false);
+		buttonPanel.add(searchButton);
 		
 		backButton = new JButton("Back");
-        backButton.setBackground(new Color(100, 150, 250));
-        backButton.setForeground(Color.WHITE);
-        backButton.setFont(new Font("Arial", Font.BOLD, 14));
-        backButton.setFocusPainted(false);
-        backButton.setBounds(170, 250, 200, 30);
-        backButton.addActionListener(this);
-		buttonPanel.add(backButton);
+		backButton.setBackground(new Color(100, 150, 250));
+		backButton.setForeground(Color.WHITE);
+		backButton.setFont(new Font("Arial", Font.BOLD, 14));
+		backButton.setFocusPainted(false);
+		backButton.setBounds(170, 250, 200, 30);
 		backButton.addActionListener(e -> { new Admin(); this.dispose(); });
+		buttonPanel.add(backButton);
+
 		
 		readFile();
 
@@ -990,39 +1034,43 @@ class AddFaculty extends JFrame implements ActionListener {
     }
 	
 	private void submit() {
-		String userRole = "Faculty";
-		String id = idTF.getText();
-		String password = passwordTF.getText();
-		String name = fullNameTF.getText();
-		String dob = dobTF.getText();
-		String gender = maleRB.isSelected() ? "Male" : femaleRB.isSelected() ? "Female" : "Other";
-		String nationality = (String) nationalityComboBox.getSelectedItem();
-		String department = (String) departmentComboBox.getSelectedItem();
-		String phone = phoneTF.getText();
-		String email = emailTF.getText();
-		String[] programs = new String[3];
-		String[] cgpas = new String[3];
-		for (int i = 0; i < 3; i++) {
-			programs[i] = programTF[i].getText();
-			cgpas[i] = cgpaTF[i].getText();
-		}
+        String userRole = "Faculty";
+        String id = idTF.getText();
+        String password = passwordTF.getText();
+        String name = fullNameTF.getText();
+        String dob = dobTF.getText();
+        String gender = maleRB.isSelected() ? "Male" : femaleRB.isSelected() ? "Female" : "Other";
+        String nationality = (String) nationalityComboBox.getSelectedItem();
+        String department = (String) departmentComboBox.getSelectedItem();
+        String phone = phoneTF.getText();
+        String email = emailTF.getText();
+        String[] programs = new String[3];
+        String[] cgpas = new String[3];
+        for (int i = 0; i < 3; i++) {
+            programs[i] = programTF[i].getText();
+            cgpas[i] = cgpaTF[i].getText();
+        }
 
-		if (id.isEmpty() || password.isEmpty() || name.isEmpty() || dob.isEmpty() || phone.isEmpty() || email.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "All fields must be filled!");
-			return;
-		}
+        if (id.isEmpty() || password.isEmpty() || name.isEmpty() || dob.isEmpty() || phone.isEmpty() || email.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "All fields must be filled!");
+            return;
+        }
 
-		try {
-			FacultyIdName.saveFacultyIdName( id, name);
-			User.saveUser(userRole, id, password);
-			Faculties.saveFaculty(id, password, name, gender, nationality, dob, phone, email, programs, cgpas, department);
-			tableModel.addRow(new Object[]{id, password, name, dob, gender, nationality, phone, email, department, programs[0], cgpas[0], programs[1], cgpas[1], programs[2], cgpas[2]});
-			JOptionPane.showMessageDialog(this, "Faculty saved successfully!");
-			resetFields();
-		} catch (IOException ex) {
-			JOptionPane.showMessageDialog(this, "Error saving faculty data: " + ex.getMessage());
-		}
-	}
+        try {
+            if (!User.isIdExist(id)) {
+                FacultyIdName.saveFacultyIdName(id, name);
+                User.saveUser(userRole, id, password);
+                Faculties.saveFaculty(id, password, name, gender, nationality, dob, phone, email, programs, cgpas, department);
+                tableModel.addRow(new Object[]{id, password, name, dob, gender, nationality, phone, email, department, programs[0], cgpas[0], programs[1], cgpas[1], programs[2], cgpas[2]});
+                JOptionPane.showMessageDialog(this, "Faculty saved successfully!");
+                resetFields();
+            } else {
+                JOptionPane.showMessageDialog(this, "ID already exists!");
+            }
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Error saving faculty data: " + ex.getMessage());
+        }
+    }
 
 
     private void update(int selectedRow) {
@@ -1592,7 +1640,7 @@ class AddStudent extends JFrame {
     private void addStudent() {
         String id = idField.getText();
         String password = passwordField.getText();
-        String userRole ="Student";
+        String userRole = "Student";
         String studentName = studentNameField.getText();
         String fathersName = fathersNameField.getText();
         String mothersName = mothersNameField.getText();
@@ -1603,13 +1651,17 @@ class AddStudent extends JFrame {
         String level = (String) levelComboBox.getSelectedItem();
         String department = (String) departmentComboBox.getSelectedItem();
 
-        if (id.isEmpty() || password.isEmpty()|| studentName.isEmpty() || fathersName.isEmpty()|| mothersName.isEmpty()|| nationality.isEmpty()|| dob.isEmpty() || email.isEmpty() || phoneNumber.isEmpty()) {
+        if (id.isEmpty() || password.isEmpty() || studentName.isEmpty() || fathersName.isEmpty() || mothersName.isEmpty() || nationality.isEmpty() || dob.isEmpty() || email.isEmpty() || phoneNumber.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill all fields.");
         } else {
             try {
-                User.saveUser(userRole, id, password);
-                Students.saveStudent(id, studentName, fathersName, mothersName, nationality, dob, level, department, email, phoneNumber);
-                JOptionPane.showMessageDialog(this, "Account created successfully!");
+                if (!User.isIdExist(id)) {
+                    User.saveUser(userRole, id, password);
+                    Students.saveStudent(id, studentName, fathersName, mothersName, nationality, dob, level, department, email, phoneNumber);
+                    JOptionPane.showMessageDialog(this, "Account created successfully!");
+                } else {
+                    JOptionPane.showMessageDialog(this, "ID already exists. Please choose a different ID.");
+                }
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this, "Error saving to the database.");
             }

@@ -18,10 +18,14 @@ public class Faculty extends JFrame implements ActionListener {
     public Faculty(String facultyId) {
         this.facultyId = facultyId;
         setTitle("Faculty Dashboard");
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+		
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setLocationRelativeTo(null);
+        this.setLayout(null);
+        this.setVisible(true);
         setSize(800, 650);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(null);
 
         String facultyName = null;
         try {
@@ -94,7 +98,6 @@ public class Faculty extends JFrame implements ActionListener {
 		refrashButton = new JButton("Refresh");
 		button(refrashButton, 450, 200);
 
-        setVisible(true);
     }
 
 	@Override
@@ -112,6 +115,9 @@ public class Faculty extends JFrame implements ActionListener {
 			loadStudents(); 
 		}else if (e.getSource() == backButton) {
 			new Login();
+			this.dispose();
+		}else if (e.getSource() == refrashButton) {
+			new Faculty(facultyId);
 			this.dispose();
 		}
 	}
@@ -208,15 +214,15 @@ public class Faculty extends JFrame implements ActionListener {
 			return;
 		}
 
-		String selectedCourse = (String) courseComboBox.getSelectedItem();
-		String selectedSection = (String) sectionComboBox.getSelectedItem();
-		
-		String semester = " ";
-		
+		final String selectedCourse = (String) courseComboBox.getSelectedItem();
+		final String selectedSection = (String) sectionComboBox.getSelectedItem();
+		final String semester;
+
 		try {
-			semester = ManageCourse.readSemester();
+			semester = ManageCourse.readSemester(); 
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, "Error reading semester: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			return;
 		}
 
 		if (selectedCourse == null || selectedSection == null) {
@@ -238,11 +244,16 @@ public class Faculty extends JFrame implements ActionListener {
 
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(marksFile, true))) {
 			String studentId = (String) tableModel.getValueAt(selectedRow, 0);
-			boolean alreadyExists = existingRecords.stream().anyMatch(record -> record.startsWith(studentId + ","));
+
+			boolean alreadyExists = existingRecords.stream().anyMatch(record -> {
+				String[] parts = record.split(",");
+				return parts.length == 12 && parts[0].equals(studentId) && parts[1].equals(selectedCourse)
+						&& parts[2].equals(selectedSection) && parts[11].equals(semester);
+			});
 
 			if (alreadyExists) {
-				JOptionPane.showMessageDialog(this, "Marks already added for Student ID: " + studentId + 
-						". Use the Edit button to modify.", "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Marks already added for Student ID: " + studentId +
+						" in Course: " + selectedCourse + ". Use the Edit button to modify.", "Error", JOptionPane.ERROR_MESSAGE);
 			} else {
 				String attendance = getValidNumber((String) tableModel.getValueAt(selectedRow, 2));
 				String quiz1 = getValidNumber((String) tableModel.getValueAt(selectedRow, 3));
@@ -254,12 +265,11 @@ public class Faculty extends JFrame implements ActionListener {
 				int totalMarks = Integer.parseInt(attendance) + Integer.parseInt(quiz1) +
 						Integer.parseInt(quiz2) + Integer.parseInt(assignment) +
 						Integer.parseInt(midExam) + Integer.parseInt(finalExam);
-
 				double cgpa = calculateCGPA(totalMarks);
 
-				writer.write(studentId + "," + selectedCourse + "," + selectedSection + "," + attendance + "," +
-						quiz1 + "," + quiz2 + "," + assignment + "," + midExam + 
-						"," + finalExam + "," + totalMarks + "," + cgpa + "," + semester);
+				writer.write(studentId + "," + selectedCourse + "," + selectedSection + "," +
+						attendance + "," + quiz1 + "," + quiz2 + "," + assignment + "," +
+						midExam + "," + finalExam + "," + totalMarks + "," + cgpa + "," + semester);
 				writer.newLine();
 
 				JOptionPane.showMessageDialog(this, "Marks added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -270,34 +280,40 @@ public class Faculty extends JFrame implements ActionListener {
 		}
 	}
 
-
-	
 	private void editMarks() {
 		int selectedRow = studentTable.getSelectedRow();
 		if (selectedRow == -1) {
-			JOptionPane.showMessageDialog(this, "Please select a student for editing marks.", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Please select a student to edit marks.", "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		
-		String studentId = (String) tableModel.getValueAt(selectedRow, 0);
+
 		String selectedCourse = (String) courseComboBox.getSelectedItem();
 		String selectedSection = (String) sectionComboBox.getSelectedItem();
-		
+		String semester;
+
+		try {
+			semester = ManageCourse.readSemester();
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, "Error reading semester: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
 		if (selectedCourse == null || selectedSection == null) {
 			JOptionPane.showMessageDialog(this, "Please select a course and section.", "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		
+
+		String studentId = (String) tableModel.getValueAt(selectedRow, 0);
 		File marksFile = new File("StudentMarks.txt");
-		List<String> fileContent = new ArrayList<>();
-		boolean studentExist = false;
-		
+		List<String> updatedRecords = new ArrayList<>();
+		boolean recordFound = false;
+
 		try (BufferedReader reader = new BufferedReader(new FileReader(marksFile))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				String[] data = line.split(",");
-				if (data.length == 11 && data[0].equals(studentId) && data[1].equals(selectedCourse) && data[2].equals(selectedSection)) {
-					studentExist = true;
+				String[] parts = line.split(",");
+				if (parts.length == 12 && parts[0].equals(studentId) && parts[1].equals(selectedCourse) 
+						&& parts[2].equals(selectedSection) && parts[11].equals(semester)) {
 					
 					String attendance = getValidNumber((String) tableModel.getValueAt(selectedRow, 2));
 					String quiz1 = getValidNumber((String) tableModel.getValueAt(selectedRow, 3));
@@ -305,18 +321,20 @@ public class Faculty extends JFrame implements ActionListener {
 					String assignment = getValidNumber((String) tableModel.getValueAt(selectedRow, 5));
 					String midExam = getValidNumber((String) tableModel.getValueAt(selectedRow, 6));
 					String finalExam = getValidNumber((String) tableModel.getValueAt(selectedRow, 7));
-					
+
 					int totalMarks = Integer.parseInt(attendance) + Integer.parseInt(quiz1) +
 							Integer.parseInt(quiz2) + Integer.parseInt(assignment) +
 							Integer.parseInt(midExam) + Integer.parseInt(finalExam);
-					
 					double cgpa = calculateCGPA(totalMarks);
-					
-					fileContent.add(studentId + "," + selectedCourse + "," + selectedSection + "," +
+
+					String updatedRecord = studentId + "," + selectedCourse + "," + selectedSection + "," +
 							attendance + "," + quiz1 + "," + quiz2 + "," + assignment + "," +
-							midExam + "," + finalExam + "," + totalMarks + "," + cgpa);
+							midExam + "," + finalExam + "," + totalMarks + "," + cgpa + "," + semester;
+					
+					updatedRecords.add(updatedRecord);
+					recordFound = true;
 				} else {
-					fileContent.add(line);
+					updatedRecords.add(line);
 				}
 			}
 		} catch (IOException e) {
@@ -324,21 +342,21 @@ public class Faculty extends JFrame implements ActionListener {
 			JOptionPane.showMessageDialog(this, "Error reading marks data.", "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		
-		if (!studentExist) {
-			JOptionPane.showMessageDialog(this, "No existing marks found for this student. Use Add Marks instead.", "Error", JOptionPane.ERROR_MESSAGE);
+
+		if (!recordFound) {
+			JOptionPane.showMessageDialog(this, "No existing marks found for the selected student.", "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		
+
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(marksFile))) {
-			for (String record : fileContent) {
+			for (String record : updatedRecords) {
 				writer.write(record);
 				writer.newLine();
 			}
 			JOptionPane.showMessageDialog(this, "Marks updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException e) {
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Error updating marks.", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Error saving updated marks.", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -362,7 +380,15 @@ public class Faculty extends JFrame implements ActionListener {
 	
 
 	private String getValidNumber(String value) {
-		return (value == null || value.trim().isEmpty()) ? "0" : value.trim();
+		if (value == null || value.trim().isEmpty()) {
+			return "0";
+		}
+		try {
+			int num = Integer.parseInt(value.trim());
+			return String.valueOf(num);
+		} catch (NumberFormatException e) {
+			return "0";
+		}
 	}
 	
 	private double calculateCGPA(int totalMarks) {
@@ -457,8 +483,13 @@ class FacultyDashboard extends JFrame implements ActionListener {
 
         this.setTitle("Faculty Dashboard");
         this.setSize(500, 500);
+        ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+		
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setLocationRelativeTo(null);
         this.setLayout(null);
+        this.setVisible(true);
 
         JLabel titleLabel = new JLabel("Faculty Dashboard");
         titleLabel.setBounds(150, 20, 200, 30);
@@ -527,8 +558,6 @@ class FacultyDashboard extends JFrame implements ActionListener {
         this.add(updateButton);
 
         loadFacultyData();
-
-        this.setVisible(true);
     }
 
     private void loadFacultyData() {
@@ -593,4 +622,5 @@ class FacultyDashboard extends JFrame implements ActionListener {
         }
     }
 }
+
 

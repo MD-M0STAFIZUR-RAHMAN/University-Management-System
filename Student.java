@@ -7,24 +7,30 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 
+
+
 class Student extends JFrame implements ActionListener { 
     private JComboBox<String> courseComboBox, sectionComboBox;
     private JTable marksTable;
     private DefaultTableModel tableModel;
-    private JButton addCourseButton, backButton, dashboardButton;
+    private JButton addCourseButton, backButton, dashboardButton, viewResultsButton;
     private String studentId;
-	public boolean status ;
+    public boolean status;
 
     public Student(String studentId) {
         this.studentId = studentId;
 
         setTitle("Student Dashboard");
+		
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(null);
-		
-		status = Methods.readStatus();
+        getContentPane().setBackground(Color.WHITE); 
+        
+        status = Methods.readStatus();
 
         String studentName = "Unknown";
         try {
@@ -32,50 +38,66 @@ class Student extends JFrame implements ActionListener {
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Unable to load student name.", "Error", JOptionPane.ERROR_MESSAGE);
         }
-        
+
         JLabel WelcomeLabel = new JLabel("Welcome " + studentName);
         WelcomeLabel.setBounds(0, 20, 800, 30);
         WelcomeLabel.setHorizontalAlignment(JLabel.CENTER);
-        WelcomeLabel.setFont(new Font("Arial", Font.BOLD, 20)); 
-        WelcomeLabel.setForeground(new Color(70, 70, 150));
+        WelcomeLabel.setFont(new Font("Arial", Font.BOLD, 24)); 
+        WelcomeLabel.setForeground(new Color(70, 70, 150)); 
         add(WelcomeLabel);
         
-		JLabel semesterLabel;
+        JLabel semesterLabel;
         try {
-            semesterLabel = new JLabel("Semester : "+ManageCourse.readSemester());
+            semesterLabel = new JLabel("Semester: " + ManageCourse.readSemester());
         } catch (IOException e) {
             semesterLabel = new JLabel("Error reading semester");
         }
-		semesterLabel.setBounds(50, 50, 300, 50);
-		semesterLabel.setFont(new Font("Arial", Font.BOLD, 20));
-		semesterLabel.setForeground(new Color(70, 70, 150));
-		this.add(semesterLabel);
-		
+        semesterLabel.setBounds(50, 50, 300, 50);
+        semesterLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        semesterLabel.setForeground(new Color(70, 70, 150));
+        this.add(semesterLabel);
+
         dashboardButton = new JButton();
         dashboardButton.setBounds(720, 30, 30, 30);
         dashboardButton.setIcon(new ImageIcon("E:/UMS/image/dashboard.png"));
         dashboardButton.setFocusPainted(false);
         dashboardButton.addActionListener(this);
+        dashboardButton.setBackground(new Color(200, 200, 255)); 
         add(dashboardButton);
 
         addCourseButton = new JButton("Add Course");
         addCourseButton.setBounds(50, 150, 150, 30);
+        addCourseButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addCourseButton.setBackground(new Color(100, 180, 255)); 
+        addCourseButton.setForeground(Color.WHITE);
         addCourseButton.addActionListener(this);
         add(addCourseButton);
 
+        viewResultsButton = new JButton("View Results");
+        viewResultsButton.setBounds(220, 150, 150, 30);
+        viewResultsButton.setFont(new Font("Arial", Font.BOLD, 14));
+        viewResultsButton.setBackground(new Color(100, 180, 255)); 
+        viewResultsButton.setForeground(Color.WHITE);
+        viewResultsButton.addActionListener(this);
+        add(viewResultsButton);
+
         tableModel = new DefaultTableModel(new String[]{"Course", "Section", "Attendance Mark", "Quiz 1", "Quiz 2", "Assignment", "Mid Exam", "Final Exam", "Total Marks", "CGPA"}, 0);
         marksTable = new JTable(tableModel);
+        marksTable.setBackground(new Color(255, 255, 255)); 
+        marksTable.setForeground(new Color(70, 70, 150));
         JScrollPane scrollPane = new JScrollPane(marksTable);
         scrollPane.setBounds(50, 200, 700, 300);
         add(scrollPane);
 
         backButton = new JButton("Back");
-        backButton.setBounds(350, 520, 150, 30);
-        backButton.addActionListener(e -> {new Login(); dispose();});
+        backButton.setBounds(600, 520, 150, 30);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setBackground(new Color(100,150, 250));
+        backButton.addActionListener(e -> { new Login(); this.dispose(); });
         add(backButton);
-        
+
         loadMarks(studentId);
-        
+
         setVisible(true);
     }
 
@@ -89,6 +111,8 @@ class Student extends JFrame implements ActionListener {
             }
         } else if (e.getSource() == dashboardButton) {
             new StudentDashboard(studentId);
+        } else if (e.getSource() == viewResultsButton) {
+            new ViewResultsFrame(studentId);
         }
     }
     
@@ -105,24 +129,23 @@ class Student extends JFrame implements ActionListener {
         return null;
     }
 
-    private void addCourseToStudent(String course, String section) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("StudentCourses.txt", true))) {
-            writer.write(studentId + "," + course + "," + section);
-            writer.newLine();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     private void loadMarks(String studentId) {
         tableModel.setRowCount(0); 
+
+        String semester;
+        try {
+            semester = ManageCourse.readSemester();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error reading semester.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         try (BufferedReader reader = new BufferedReader(new FileReader("StudentMarks.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",");
-                if (data.length == 11 && data[0].equals(studentId)) {  
-                    String[] rowData = Arrays.copyOfRange(data, 1, data.length);
+                if (data.length == 12 && data[0].equals(studentId) && data[11].equals(semester)) {  
+                    String[] rowData = Arrays.copyOfRange(data, 1, data.length - 1);
                     tableModel.addRow(rowData);
                 }
             }
@@ -131,6 +154,7 @@ class Student extends JFrame implements ActionListener {
         }
     }
 }
+
 
 class AddCourse extends JFrame implements ActionListener {
     private JComboBox<String> courseComboBox, sectionComboBox;
@@ -144,48 +168,81 @@ class AddCourse extends JFrame implements ActionListener {
 
         setTitle("Add Course");
         setSize(600, 400);
+		
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(null);
+        getContentPane().setBackground(Color.WHITE);
 
         JLabel courseLabel = new JLabel("Course:");
-        courseLabel.setBounds(30, 30, 100, 30);
-        add(courseLabel);
+		courseLabel.setBounds(30, 30, 100, 30);
+		courseLabel.setFont(new Font("Arial", Font.BOLD, 14)); 
+		courseLabel.setForeground(new Color(50, 50, 50));
+		add(courseLabel);
 
-        courseComboBox = new JComboBox<>(getCourses());
-        courseComboBox.setBounds(100, 30, 200, 30);
-        courseComboBox.addActionListener(e ->  ());
-        add(courseComboBox);
+		courseComboBox = new JComboBox<>(getCourses());
+		courseComboBox.setBounds(100, 30, 200, 30);
+		courseComboBox.setBackground(new Color(255, 255, 255)); 
+		courseComboBox.setFont(new Font("Arial", Font.PLAIN, 12)); 
+		courseComboBox.setForeground(new Color(50, 50, 50)); 
+		courseComboBox.addActionListener(e -> {});
+		add(courseComboBox);
 
-        JLabel sectionLabel = new JLabel("Section:");
-        sectionLabel.setBounds(30, 70, 100, 30);
-        add(sectionLabel);
+		JLabel sectionLabel = new JLabel("Section:");
+		sectionLabel.setBounds(30, 70, 100, 30);
+		sectionLabel.setFont(new Font("Arial", Font.BOLD, 14)); 
+		sectionLabel.setForeground(new Color(50, 50, 50));
+		add(sectionLabel);
 
-        sectionComboBox = new JComboBox<>();
-        sectionComboBox.setBounds(100, 70, 200, 30);
-        updateSections();
-        add(sectionComboBox);
+		sectionComboBox = new JComboBox<>();
+		sectionComboBox.setBounds(100, 70, 200, 30);
+		sectionComboBox.setBackground(new Color(255, 255, 255)); 
+		sectionComboBox.setFont(new Font("Arial", Font.PLAIN, 12)); 
+		sectionComboBox.setForeground(new Color(50, 50, 50)); 
+		updateSections();
+		add(sectionComboBox);
 
-        addButton = new JButton("Add Course");
-        addButton.setBounds(320, 30, 150, 30);
-        addButton.addActionListener(this);
-        add(addButton);
+		addButton = new JButton("Add Course");
+		addButton.setBounds(320, 30, 150, 30);
+		addButton.setBackground(new Color(0, 123, 255)); 
+		addButton.setForeground(Color.WHITE); 
+		addButton.setFont(new Font("Arial", Font.BOLD, 14));
+		addButton.setBorderPainted(false); 
+		addButton.setFocusPainted(false); 
+		addButton.addActionListener(this);
+		add(addButton);
 
-        deleteButton = new JButton("Delete Course");
-        deleteButton.setBounds(320, 70, 150, 30);
-        deleteButton.addActionListener(this);
-        add(deleteButton);
+		deleteButton = new JButton("Delete Course");
+		deleteButton.setBounds(320, 70, 150, 30);
+		deleteButton.setBackground(new Color(255, 0, 0)); 
+		deleteButton.setForeground(Color.WHITE); 
+		deleteButton.setFont(new Font("Arial", Font.BOLD, 14)); 
+		deleteButton.setBorderPainted(false);
+		deleteButton.setFocusPainted(false);
+		deleteButton.addActionListener(this);
+		add(deleteButton);
 
-        cancelButton = new JButton("Cancel");
-        cancelButton.setBounds(320, 110, 150, 30);
-        cancelButton.addActionListener(e -> dispose());
-        add(cancelButton);
+		cancelButton = new JButton("Cancel");
+		cancelButton.setBounds(320, 110, 150, 30);
+		cancelButton.setBackground(new Color(169, 169, 169)); 
+		cancelButton.setForeground(Color.WHITE); 
+		cancelButton.setFont(new Font("Arial", Font.BOLD, 14)); 
+		cancelButton.setBorderPainted(false);
+		cancelButton.setFocusPainted(false);
+		cancelButton.addActionListener(e -> dispose());
+		add(cancelButton);
 
-        tableModel = new DefaultTableModel(new String[]{"Student ID", "Course", "Section"}, 0);
-        courseTable = new JTable(tableModel);
-        JScrollPane scrollPane = new JScrollPane(courseTable);
-        scrollPane.setBounds(30, 150, 540, 200);
-        add(scrollPane);
+		tableModel = new DefaultTableModel(new String[]{"Student ID", "Course", "Section"}, 0);
+		courseTable = new JTable(tableModel);
+		courseTable.setFont(new Font("Arial", Font.PLAIN, 12)); 
+		courseTable.setForeground(new Color(50, 50, 50)); 
+		courseTable.setSelectionBackground(new Color(0, 123, 255)); 
+		courseTable.setSelectionForeground(Color.WHITE); 
+		JScrollPane scrollPane = new JScrollPane(courseTable);
+		scrollPane.setBounds(30, 150, 540, 200);
+		add(scrollPane);
 
         loadStudentCourses();
         setVisible(true);
@@ -263,22 +320,40 @@ class AddCourse extends JFrame implements ActionListener {
     }
 
     private void addCourseToStudent(String course, String section) {
-		String semester = " ";
-		
-		try {
-			semester = ManageCourse.readSemester();
-		} catch (IOException e) {
-			JOptionPane.showMessageDialog(this, "Error reading semester: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-		}
-		
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("StudentCourses.txt", true))) {
-            writer.write(studentId + "," + course + "," + section + "," + semester);
-            writer.newLine();
-            tableModel.addRow(new Object[]{studentId, course, section});
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        String semester = " ";
+        int studentCount = 0;
+    
+        try {
+            semester = ManageCourse.readSemester();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error reading semester: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    
+        try (BufferedReader reader = new BufferedReader(new FileReader("StudentCourses.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts[1].equals(course) && parts[2].equals(section)) {
+                    studentCount++;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    
+        if (studentCount < 2) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("StudentCourses.txt", true))) {
+                writer.write(studentId + "," + course + "," + section + "," + semester);
+                writer.newLine();
+                tableModel.addRow(new Object[]{studentId, course, section});
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Maximum number of students in this section reached.", "Warning", JOptionPane.WARNING_MESSAGE);
         }
     }
+    
 
     private void deleteSelectedCourse() {
         int selectedRow = courseTable.getSelectedRow();
@@ -354,6 +429,9 @@ class StudentDashboard extends JFrame implements ActionListener {
 
         this.setTitle("Student Dashboard");
         this.setSize(600, 600);
+		
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(null);
 
@@ -507,6 +585,81 @@ class StudentDashboard extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == updateButton) {
             updateStudentData();
+        }
+    }
+}
+
+class ViewResultsFrame extends JFrame {
+    private JTable resultsTable;
+    private DefaultTableModel tableModel;
+    private JComboBox<String> semesterComboBox;
+    private String studentId;
+	private JButton backButton ;
+
+    public ViewResultsFrame(String studentId) {
+        this.studentId = studentId;
+
+        setTitle("View Results");
+        setSize(800, 600);
+		ImageIcon image = new ImageIcon("../image/AIUB.png");
+        this.setIconImage(image.getImage());
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(null);
+
+        semesterComboBox = new JComboBox<>();
+        semesterComboBox.setBounds(50, 20, 200, 30);
+        loadSemesters();
+        semesterComboBox.addActionListener(e -> loadResults(studentId));
+        add(semesterComboBox);
+
+        tableModel = new DefaultTableModel(new String[]{"Course", "Total Marks", "CGPA"}, 0);
+        resultsTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(resultsTable);
+        scrollPane.setBounds(50, 70, 700, 400);
+        add(scrollPane);
+		
+		backButton = new JButton("Back");
+        backButton.setBounds(600, 520, 150, 30);
+        backButton.setFont(new Font("Arial", Font.BOLD, 14));
+        backButton.setBackground(new Color(100,150, 250));
+        backButton.addActionListener(e -> { this.dispose(); });
+        add(backButton);
+
+        loadResults(studentId);
+
+        setVisible(true);
+    }
+
+    private void loadSemesters() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("semesters.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                semesterComboBox.addItem(line.trim());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadResults(String studentId) {
+        tableModel.setRowCount(0);
+
+        String selectedSemester = (String) semesterComboBox.getSelectedItem();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader("StudentMarks.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data.length == 12 && data[0].equals(studentId) && data[11].equals(selectedSemester)) {
+                    String course = data[1];
+                    String totalMarks = data[9];
+                    String cgpa = data[10];
+                    tableModel.addRow(new String[]{course, totalMarks, cgpa});
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
