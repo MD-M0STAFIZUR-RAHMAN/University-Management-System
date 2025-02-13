@@ -1,0 +1,2 @@
+CSE,eng,1,a,11111,mahfuz,Spring25
+CSE,math,2,s,11111,mahfuz,Spring25
